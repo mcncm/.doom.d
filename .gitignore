@@ -1,4 +1,5 @@
 custom.el
+config.el
 mu4e-config.el
 secrets.el
 flycheck_config.el

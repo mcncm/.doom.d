@@ -1,8 +1,16 @@
+#+TITLE: Literate Doom Emacs configuration
+#+AUTHOR: mcncm
+#+PROPERTY: header-args :emacs-lisp :tangle yes :comments link
+#+STARTUP: org-startup-folded: showall
+#+BEGIN_SRC elisp
 ;;; $DOOMDIR/config.el -*- lexical-binding: t; -*-
+#+END_SRC
+* Default Doom config preamble
+This is just the block at the top of the ~config.el~ that ships with Doom Emacs, modified to my current tastes.
 
+#+BEGIN_SRC elisp
 ;; Place your private configuration here! Remember, you do not need to run 'doom
 ;; sync' after modifying this file!
-
 
 ;; Some functionality uses this to identify you, e.g. GPG configuration, email
 ;; clients, file templates and snippets.
@@ -55,29 +63,28 @@
 ;;
 ;; You can also try 'gd' (or 'C-c c d') to jump to their definition and see how
 ;; they are implemented.
-
-
-;;;;;;;;;;;;;;;;;;
-;; generalities ;;
-;;;;;;;;;;;;;;;;;;
-
+#+END_SRC
+* Generalities
+Behold, the dodecahedron!
+#+BEGIN_SRC elisp
 (setq +doom-dashboard-banner-dir "~/.doom.d/banner")
 (setq my/banner-template-file "dodecahedron.svg")
 (setq +doom-dashboard-banner-file "banner.svg")
+#+END_SRC
 
-(setq my/org-agenda-directory (concat org-directory "/agenda"))
-
-;; More closely match the Spacemacs convention that I like. I'm still not sure
-;; what the default "repeat" behavior of the comma key actually /does/. I might
-;; prefer it. In any case, I should also see if I ought to unmap that key first.
-;; Note that this *unmaps* 'SPC-m'.
+Here I’m trying to more closely match the Spacemacs convention that I like. I'm still not sure what the default “repeat” behavior of the comma key actually /does/. For all I know, I might prefer it. In any case, I should also see if I ought to unmap that key first. Note that this *unmaps* ~SPC-m~.
+#+BEGIN_SRC elisp
 (setq doom-localleader-key ",")
+#+END_SRC
 
-
+Some helper keybindings for quickly finding files in my home directory and agenda.
+#+BEGIN_SRC elisp
 (defun my/find-file-in-home ()
   "Search for a file in home directory."
   (interactive)
   (ido-find-file-in-dir gnus-home-directory))
+
+(setq my/org-agenda-directory (concat org-directory "/agenda"))
 
 (defun my/find-file-in-agenda ()
   "Search for a file in home directory."
@@ -87,26 +94,36 @@
 (map! :map doom-leader-file-map
       "h" #'my/find-file-in-home
       "a" #'my/find-file-in-agenda)
+#+END_SRC
 
+Here’s a little auxiliary function for retrieving ~ewal~ palette colors. I’m not sure if there’s already a function that accomplishes this, but if there is I should use it.
+#+BEGIN_SRC elisp
 (defun my/ewal-color (color)
   "COLOR should be a symbol defined in ewal-base-palette. Options are:
 'comment, 'background, 'foreground, 'cursor, 'black, 'red,
 'green, 'yellow, 'blue, 'magenta, 'cyan, 'white"
   (cdr (assoc color ewal-base-palette)))
+#+END_SRC
+* Fonts, faces, and characters
+Fix some pretty awful ~lsp~ colors. To check: are all these ~after!~ macros expensive? Are they hurting my startup time? Should I be putting them in some specific order?
+#+BEGIN_SRC elisp
+;; Fix awful lsp colors To check: are all these `after!’ macros expensive? Are
+;; they hurting my startup time?
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; font and face configurations ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; Fix awful lsp colors
-;; To check: are all these `after!' macros expensive? Are they huritng my
-;; startup time?
 (after! lsp-modeline
   (after! ewal-doom-themes
     (set-face-attribute 'lsp-modeline-code-actions-face nil
                         :foreground (my/ewal-color 'cyan))))
+#+END_SRC
 
+Coq-related face settings from my old Spacemacss config, which are not exactly correct any more.
+#+BEGIN_SRC elisp
+;; Change the color-setting from the version, wrap in 'set-face-attribute' call
+;; (proof-locked-face :background ,(ewal-get-color 'background 2))
+#+END_SRC
+
+Some sensible org theme things. I think I snagged these from [[https://github.com/biblecraft-abe/Spacemacs][Abraham Peters]].
+#+BEGIN_SRC elisp
 ;; Set some org theme things
 (let* ((base-font-color     (face-foreground 'default nil 'default))
        (headline           `(:inherit default :weight bold :forefround ,base-font-color)))
@@ -121,12 +138,16 @@
    `(org-level-2 ((t (,@headline :height 1.5))))
    `(org-level-1 ((t (,@headline :height 1.75))))
    `(org-document-title ((t (,@headline :height 2.0 :underline nil))))))
+#+END_SRC
 
+Fira code is a pretty nice programming font, and I like its ligatures and special characters. But some of them, like rendering ~x~ as a multiplication sign, are a little ugly.
+#+BEGIN_SRC elisp
 (custom-set-variables '(fira-code-mode-disabled-ligatures '("[]" "#{" "#(" "#[" "#_(" "x")))
 (add-hook 'prog-mode-hook 'fira-code-mode)
+#+END_SRC
 
-;; A fun little trick: recolor the banner!
-;; using ~async-shell-command~ could be a problem. Maybe try ~shell-command~.
+A fun little trick: recolor the banner! Using ~async-shell-command~ could be a problem. Maybe try ~shell-command~.
+#+BEGIN_SRC elisp
 (defun my/recolor-banner ()
   (message "recoloring banner")
   (shell-command
@@ -137,17 +158,18 @@
 
 ;; TODO figure out how to do this correctly
 ;; (advice-add 'load-theme :after #'my/recolor-banner)
+#+END_SRC
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; programming configurations ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; Not necessary if using :editor format-all, but that seems not to work.
+* Programming
+** Rust
+Not necessary if using ~:editor format-all~ (or something like this? I forget what the setting was called), but that seems not to work. In any case, I think I might prefer ~rust-mode~ to ~rustic~. I might consider going back, even within Doom.
+#+BEGIN_SRC elisp
 (setq rustic-lsp-server 'rust-analyzer
       rustic-format-on-save t)
-
-;; Will this make company mode work?
+#+END_SRC
+** Company
+Will this make company mode work?
+#+BEGIN_SRC elisp
 (set-company-backend!
   '(c-mode
     haskell-mode
@@ -164,11 +186,10 @@
 
 (setq +lsp-company-backend
       '(company-lsp :with company-tabnine :separate))
+#+END_SRC
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; org-mode configurations ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+* Org mode
+#+BEGIN_SRC elisp
 (defun my/latex-fragment-completion ()
   ;; This regexp will trigger LaTeX compilation whenever following a '$'
   ;; character by an optional punctuation character and whitespace.
@@ -204,7 +225,7 @@
   ;; (push '("read" . "read") org-pretty-tags-surrogate-strings))
 
 
-;; TODO break out  a lot of these hooks into some appropriate ‘text-mode’ hook.
+;; TODO break out a lot of these hooks into some appropriate ‘text-mode’ hook.
 (add-hook 'org-mode-hook
           '(lambda ()
              ;; disable flycheck if you're in an agenda file
@@ -249,12 +270,10 @@
                 alert-fade-time 30))
 
 (add-hook 'after-init-hook 'org-wild-notifier-mode)
-
-
-;;;;;;;;;;;;;;;
-;; pdf stuff ;;
-;;;;;;;;;;;;;;;
-
+#+END_SRC
+* Documents
+Some pdf viewing preferences: use the ~ewal~ colors, and start in ~midnight-minor-mode~.
+#+BEGIN_SRC elisp
 ;; Does the framework allow this kind of nesting of these macros?
 (after! pdf
   (after! ewal-doom-themes
@@ -265,12 +284,10 @@
 
 ;; Start in midnight mode!
 (add-hook 'pdf-view-mode-hook #'pdf-view-midnight-minor-mode)
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Citation management ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;
-
+#+END_SRC
+* Citation management
+This is a great big mess. You really need to figure it out at some point.
+#+BEGIN_SRC elisp
 ;; (defun my/org-zotxt-get-bibtex () 1)
 
 ;; (defun my/org-zotxt-find-attachment () 1)
@@ -298,38 +315,15 @@
 (after! org-roam-bibtex
   ;; Do I need this?
   (setq! orb-persp-project `("notes" . ,+biblio-notes-path)))
-
-;;;;;;;;;;;;;;;
-;; Coq stuff ;;
-;;;;;;;;;;;;;;;
-
-;; Change the color-setting from the version, wrap in 'set-face-attribute' call
-;; (proof-locked-face :background ,(ewal-get-color 'background 2))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;
-;; Dictionaries, etc. ;;
-;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; Instead of doing this, could you instead just open it in the minibuffer,
-;; where this is a default behavior?
-;;
-;; Should perhaps use the popup module for this.
-;;
-;; (map! ;; :after org
-;;       :map wordnut-mode-map
-;;       ;; :localleader
-;;       ;; :prefix ("z" . "org-zotxt")
-;;       "q" #'delete-window)
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Email configurations ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+#+END_SRC
+* Email
+These are the bits that I want to keep private
+#+BEGIN_SRC elisp
 (after! mu4e
   (load! "./mu4e-config.el"))
+#+END_SRC
 
+#+BEGIN_SRC elisp
 (setq
  +mu4e-backend 'offlineimap
  mu4e-get-mail-command "offlineimap"
@@ -338,9 +332,7 @@
  ;; should just quit when I type `q`
  mu4e-confirm-quit nil)
 
-;; maybe also necessary to get rid of line breaks correctly?
-;; TODO line breaks are still not handled correctly
-;; mu4e-compose-format-flowed t)
+;; TODO are line breaks still not handled correctly?
 (add-hook 'mu4e-view-mode-hook 'olivetti-mode)
 (add-hook 'mu4e-compose-mode-hook
           '(lambda ()
@@ -350,13 +342,10 @@
              (use-hard-newlines -1)
              (flyspell-mode))
           t)
-
-
-;;;;;;;;;;;;;;;;;;;
-;; Odds and ends ;;
-;;;;;;;;;;;;;;;;;;;
-
-;; A fun little thing you can do in Emacs 27. Function due to internet stranger.
+#+END_SRC
+* Odds and ends
+A fun little thing you can do in Emacs 27. Function due to an internet stranger, whom I should cite if I ever find them again.
+#+BEGIN_SRC elisp
 (defun screenshot-svg ()
   "Save a screenshot of the current frame as an SVG image.
 Saves to a temp file and puts the filename in the kill ring."
@@ -367,3 +356,19 @@ Saves to a temp file and puts the filename in the kill ring."
       (insert data))
     (kill-new filename)
     (message filename)))
+#+END_SRC
+
+I would like the ~wordnut~ buffer window to disappear when I press ~q~ or ~Esc~ or something like that.
+#+BEGIN_SRC elisp
+;; Dictionaries
+;; Instead of doing this, could you instead just open it in the minibuffer,
+;; where this is a default behavior?
+;;
+;; Should perhaps use the popup module for this.
+;;
+;; (map! ;; :after org
+;;       :map wordnut-mode-map
+;;       ;; :localleader
+;;       ;; :prefix ("z" . "org-zotxt")
+;;       "q" #'delete-window)
+#+END_SRC
