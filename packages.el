@@ -59,3 +59,7 @@
 (package! ivy-bibtex)
 (package! zotxt)
 (package! mu4e-alert)
+(package! modus-vivendi-theme)
+(package! modus-operandi-theme)
+;; It seems that poet isn’t Doom-compatible.
+(package! poet-theme)

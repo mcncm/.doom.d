@@ -1,13 +1,13 @@
 #+TITLE: Literate Doom Emacs configuration
 #+AUTHOR: mcncm
-#+PROPERTY: header-args :emacs-lisp :tangle yes :comments link
+#+PROPERTY: header-args :emacs-lisp :tangle yes :comments no :cache yes :results silent
 #+STARTUP: org-startup-folded: showall
+Use lexical binding /always/; otherwise, ~let~ constructs will not behave intuitively! Note that for this header to work properly in a literate config, we must include the ~:comments no~ attribute in the headers above, and it must come /after/ ~:tangle yes~. This attribute can also be set for each block.
 #+BEGIN_SRC elisp
 ;;; $DOOMDIR/config.el -*- lexical-binding: t; -*-
 #+END_SRC
 * Default Doom config preamble
-This is just the block at the top of the ~config.el~ that ships with Doom Emacs, modified to my current tastes.
-
+This is just the block at the top of the ~config.el~ that ships with Doom Emacs, modified to my current tastes. There’s nothing especially interesting here.
 #+BEGIN_SRC elisp
 ;; Place your private configuration here! Remember, you do not need to run 'doom
 ;; sync' after modifying this file!
@@ -32,9 +32,14 @@ This is just the block at the top of the ~config.el~ that ships with Doom Emacs,
 ;; font string. You generally only need these two:
 ;; (setq doom-font (font-spec :family "monospace" :size 12 :weight 'semi-light)
 ;;       doom-variable-pitch-font (font-spec :family "sans" :size 13))
-(setq doom-font (font-spec :family "Fira Code Retina" :size 20)
-      doom-big-font (font-spec :family "Fira Code Retina" :size 30)
-      doom-variable-pitch-font (font-spec :family "ETBembo" :size 25 :weight 'thin))
+(setq my/code-font "Fira Code Retina")
+(setq my/code-size 20)
+(setq my/text-font "ETBembo")
+(setq my/text-size 25)
+
+(setq doom-font (font-spec :family my/code-font :size my/code-size)
+      doom-big-font (font-spec :family my/code-font :size 30)
+      doom-variable-pitch-font (font-spec :family my/text-font :size my/text-size :weight 'thin))
 
 
 ;; There are two ways to load a theme. Both assume the theme is installed and
@@ -107,16 +112,13 @@ Here’s a little auxiliary function for retrieving ~ewal~ palette colors. I’m
 * Fonts, faces, and characters
 Fix some pretty awful ~lsp~ colors. To check: are all these ~after!~ macros expensive? Are they hurting my startup time? Should I be putting them in some specific order?
 #+BEGIN_SRC elisp
-;; Fix awful lsp colors To check: are all these `after!’ macros expensive? Are
-;; they hurting my startup time?
-
 (after! lsp-modeline
   (after! ewal-doom-themes
     (set-face-attribute 'lsp-modeline-code-actions-face nil
                         :foreground (my/ewal-color 'cyan))))
 #+END_SRC
 
-Coq-related face settings from my old Spacemacss config, which are not exactly correct any more.
+Coq-related face settings from my old Spacemacs config, which are not exactly correct any more.
 #+BEGIN_SRC elisp
 ;; Change the color-setting from the version, wrap in 'set-face-attribute' call
 ;; (proof-locked-face :background ,(ewal-get-color 'background 2))
@@ -124,23 +126,29 @@ Coq-related face settings from my old Spacemacss config, which are not exactly c
 
 Some sensible org theme things. I think I snagged these from [[https://github.com/biblecraft-abe/Spacemacs][Abraham Peters]].
 #+BEGIN_SRC elisp
-;; Set some org theme things
-(let* ((base-font-color     (face-foreground 'default nil 'default))
-       (headline           `(:inherit default :weight bold :forefround ,base-font-color)))
-  (custom-theme-set-faces
-   'user
-   `(org-level-8 ((t (,@headline))))
-   `(org-level-7 ((t (,@headline))))
-   `(org-level-6 ((t (,@headline))))
-   `(org-level-5 ((t (,@headline))))
-   `(org-level-4 ((t (,@headline :height 1.1))))
-   `(org-level-3 ((t (,@headline :height 1.25))))
-   `(org-level-2 ((t (,@headline :height 1.5))))
-   `(org-level-1 ((t (,@headline :height 1.75))))
-   `(org-document-title ((t (,@headline :height 2.0 :underline nil))))))
+ (let* ((base-font-color     (face-foreground 'default nil 'default))
+        ;; ~headline~ previously had a ~:foreground ,base-font-color~ in it. But
+        ;; this seems not to give the right color--all headlines come out black.
+        (headline           `(:inherit default :weight bold)))
+   ;; A Doom Emacs macro that provides a simpler syntax for `custom-theme-set-faces`
+   (custom-theme-set-faces!
+    'user
+    ;; I think these might not be working as you expect. Try disabling hl-line
+    ;; and running describe-char on these.
+    `(org-code :family ,my/code-font :height 1.0)
+    `(org-block :family ,my/code-font :height 1.0)
+    `(org-level-8 ,@headline)
+    `(org-level-7 ,@headline)
+    `(org-level-6 ,@headline)
+    `(org-level-5 ,@headline)
+    `(org-level-4 ,@headline :height 1.1)
+    `(org-level-3 ,@headline :height 1.25)
+    `(org-level-2 ,@headline :height 1.5)
+    `(org-level-1 ,@headline :height 1.75)
+    `(org-document-title ,@headline :height 2.0 :underline nil)))
 #+END_SRC
 
-Fira code is a pretty nice programming font, and I like its ligatures and special characters. But some of them, like rendering ~x~ as a multiplication sign, are a little ugly.
+Fira Code is a pretty nice programming font, and I like its ligatures and special characters. But some of them, like rendering ~x~ as a multiplication sign, are a little ugly.
 #+BEGIN_SRC elisp
 (custom-set-variables '(fira-code-mode-disabled-ligatures '("[]" "#{" "#(" "#[" "#_(" "x")))
 (add-hook 'prog-mode-hook 'fira-code-mode)
@@ -168,7 +176,7 @@ Not necessary if using ~:editor format-all~ (or something like this? I forget wh
       rustic-format-on-save t)
 #+END_SRC
 ** Company
-Will this make company mode work?
+Will this make ~company-mode~ work?
 #+BEGIN_SRC elisp
 (set-company-backend!
   '(c-mode
@@ -189,20 +197,20 @@ Will this make company mode work?
 #+END_SRC
 
 * Org mode
+A little helper function for completing latex fragments. Some notes:
++ Newlines aren’t working. It might be that you’re supposed to use a "character class" like [:space:] or \s-, but neither of these
++ ~looking-back~ is known to be quite slow. See: https://emacs.stackexchange.com/a/12744
 #+BEGIN_SRC elisp
 (defun my/latex-fragment-completion ()
-  ;; This regexp will trigger LaTeX compilation whenever following a '$'
-  ;; character by an optional punctuation character and whitespace.
-  ;; NOTE: newlines aren't working. It might be that you're supposed to use a
-  ;; "character class" like [:space:] or \s-, but neither of these seems to
-  ;; work.
-  ;; NOTE: `looking-back' is known to be quite slow. See:
-  ;; https://emacs.stackexchange.com/a/12744
+  ;; This regexp will trigger LaTeX compilation whenever following a '$' character by an optional punctuation character and whitespace.
   (when (looking-back "\$[\.,!?-]?\s")
     (save-excursion
       (backward-char 1)
       (org-toggle-latex-fragment))))
+#+END_SRC
 
+All the overridden org-mode variables
+#+BEGIN_SRC elisp
 (after! org
   (setq-default
    org-log-done 'time
@@ -220,9 +228,16 @@ Will this make company mode work?
   ;; This will render the bullets more correctly!
   (set-face-attribute 'org-superstar-header-bullet nil :family "Fira Code")
   ;; actually a beaker
-  (push '("research" . "") org-pretty-tags-surrogate-strings))
+  (push '("research" . "") org-pretty-tags-surrogate-strings)
   ;; actually a book
-  ;; (push '("read" . "read") org-pretty-tags-surrogate-strings))
+  ;; (push '("read" . "read") org-pretty-tags-surrogate-strings)
+
+  ;; Overwrites the app that should be used to open pdfs from Emacs. This was
+  ;; originally set to ~default~ in org.el, which uses the "system default pdf
+  ;; viewer." You should also figure out how to it figures out what that is, and
+  ;; how to change it. There seems to be no builtin for overwriting alists, but
+  ;; this is earlier entries shadow later entries, so this has the same effect.
+  (add-to-list 'org-file-apps '("\\.pdf\\'" . emacs)))
 
 
 ;; TODO break out a lot of these hooks into some appropriate ‘text-mode’ hook.
@@ -312,8 +327,13 @@ This is a great big mess. You really need to figure it out at some point.
                                            t directory-files-no-dot-files-regexp)
        +biblio-notes-path (concat org-directory "/biblio/notes/"))
 
+#+END_SRC
+
+We have to ensure that we open pdfs by looking up the bibliography ~file~ field, rather than by looking in a pdf directory.
+#+BEGIN_SRC elisp
 (after! org-roam-bibtex
   ;; Do I need this?
+  (setq org-ref-get-pdf-filename-function 'org-ref-get-pdf-filename-helm-bibtex)
   (setq! orb-persp-project `("notes" . ,+biblio-notes-path)))
 #+END_SRC
 * Email
