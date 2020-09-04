@@ -2,7 +2,7 @@
 #+AUTHOR: mcncm
 #+PROPERTY: header-args :emacs-lisp :tangle yes :comments no :cache yes :results silent
 #+STARTUP: org-startup-folded: showall
-Use lexical binding /always/; otherwise, ~let~ constructs will not behave intuitively! Note that for this header to work properly in a literate config, we must include the ~:comments no~ attribute in the headers above, and it must come /after/ ~:tangle yes~. This attribute can also be set for each block.
+Use lexical binding /always/; otherwise, ~let~ constructs will not behave intuitively. Note that for this header to work properly in a literate config, we must include the ~:comments no~ attribute in the headers above, and it must come /after/ ~:tangle yes~. This attribute can also be set for each block.
 #+BEGIN_SRC elisp
 ;;; $DOOMDIR/config.el -*- lexical-binding: t; -*-
 #+END_SRC
@@ -69,6 +69,7 @@ This is just the block at the top of the ~config.el~ that ships with Doom Emacs,
 ;; You can also try 'gd' (or 'C-c c d') to jump to their definition and see how
 ;; they are implemented.
 #+END_SRC
+
 * Generalities
 Behold, the dodecahedron!
 #+BEGIN_SRC elisp
@@ -77,7 +78,7 @@ Behold, the dodecahedron!
 (setq +doom-dashboard-banner-file "banner.svg")
 #+END_SRC
 
-Here I’m trying to more closely match the Spacemacs convention that I like. I'm still not sure what the default “repeat” behavior of the comma key actually /does/. For all I know, I might prefer it. In any case, I should also see if I ought to unmap that key first. Note that this *unmaps* ~SPC-m~.
+Here I’m trying to more closely match the [[https://www.spacemacs.org/][Spacemacs]] convention that I like. I'm still not sure what the default “repeat” behavior of the comma key actually /does/. For all I know, I might prefer it. In any case, I should also see if I ought to unmap that key first. Note that this *unmaps* ~SPC-m~.
 #+BEGIN_SRC elisp
 (setq doom-localleader-key ",")
 #+END_SRC
@@ -109,7 +110,9 @@ Here’s a little auxiliary function for retrieving ~ewal~ palette colors. I’m
 'green, 'yellow, 'blue, 'magenta, 'cyan, 'white"
   (cdr (assoc color ewal-base-palette)))
 #+END_SRC
+
 * Fonts, faces, and characters
+** Better color defaults
 Fix some pretty awful ~lsp~ colors. To check: are all these ~after!~ macros expensive? Are they hurting my startup time? Should I be putting them in some specific order?
 #+BEGIN_SRC elisp
 (after! lsp-modeline
@@ -124,6 +127,7 @@ Coq-related face settings from my old Spacemacs config, which are not exactly co
 ;; (proof-locked-face :background ,(ewal-get-color 'background 2))
 #+END_SRC
 
+** Org faces
 Some sensible org theme things. I think I snagged these from [[https://github.com/biblecraft-abe/Spacemacs][Abraham Peters]].
 #+BEGIN_SRC elisp
  (let* ((base-font-color     (face-foreground 'default nil 'default))
@@ -133,10 +137,11 @@ Some sensible org theme things. I think I snagged these from [[https://github.co
    ;; A Doom Emacs macro that provides a simpler syntax for `custom-theme-set-faces`
    (custom-theme-set-faces!
     'user
-    ;; I think these might not be working as you expect. Try disabling hl-line
-    ;; and running describe-char on these.
-    `(org-code :family ,my/code-font :height 1.0)
-    `(org-block :family ,my/code-font :height 1.0)
+    ;; Why does 0.8 seem to be about right? Well, it’s the same as the ratio
+    ;; between my/code-size and my/text-size. That’s probably a hint as to
+    ;; what’s going on.
+    `(org-code :family ,my/code-font :height 0.8)
+    `(org-block :family ,my/code-font :height 0.8)
     `(org-level-8 ,@headline)
     `(org-level-7 ,@headline)
     `(org-level-6 ,@headline)
@@ -148,12 +153,14 @@ Some sensible org theme things. I think I snagged these from [[https://github.co
     `(org-document-title ,@headline :height 2.0 :underline nil)))
 #+END_SRC
 
+** Ligatures
 Fira Code is a pretty nice programming font, and I like its ligatures and special characters. But some of them, like rendering ~x~ as a multiplication sign, are a little ugly.
 #+BEGIN_SRC elisp
 (custom-set-variables '(fira-code-mode-disabled-ligatures '("[]" "#{" "#(" "#[" "#_(" "x")))
 (add-hook 'prog-mode-hook 'fira-code-mode)
 #+END_SRC
 
+** Banner
 A fun little trick: recolor the banner! Using ~async-shell-command~ could be a problem. Maybe try ~shell-command~.
 #+BEGIN_SRC elisp
 (defun my/recolor-banner ()
@@ -163,8 +170,10 @@ A fun little trick: recolor the banner! Using ~async-shell-command~ could be a p
            (my/ewal-color 'blue) "/\" "
            +doom-dashboard-banner-dir "/" my/banner-template-file " > "
            +doom-dashboard-banner-dir "/" +doom-dashboard-banner-file)))
+#+END_SRC
 
-;; TODO figure out how to do this correctly
+TODO: Figure out how to do this correctly!
+#+BEGIN_SRC elisp
 ;; (advice-add 'load-theme :after #'my/recolor-banner)
 #+END_SRC
 
@@ -175,6 +184,17 @@ Not necessary if using ~:editor format-all~ (or something like this? I forget wh
 (setq rustic-lsp-server 'rust-analyzer
       rustic-format-on-save t)
 #+END_SRC
+
+I want to ensure that my compilation buffers show up on the right-hand side. Check the documentation for ~set-popup-rule!~ to find out about all the keys you can use for this.
+#+BEGIN_SRC elisp
+(set-popup-rule! "^\\*rustic"
+  ;; :select t    ;; focus the window after it opens
+  ;; :action
+  :side 'right ;; on the rhs of the screen
+  :width 0.5   ;; and fill 50% of it.
+  )
+#+END_SRC
+
 ** Company
 Will this make ~company-mode~ work?
 #+BEGIN_SRC elisp
@@ -196,7 +216,8 @@ Will this make ~company-mode~ work?
       '(company-lsp :with company-tabnine :separate))
 #+END_SRC
 
-* Org mode
+* Org-mode
+** Main Org-mode settings
 A little helper function for completing latex fragments. Some notes:
 + Newlines aren’t working. It might be that you’re supposed to use a "character class" like [:space:] or \s-, but neither of these
 + ~looking-back~ is known to be quite slow. See: https://emacs.stackexchange.com/a/12744
@@ -255,6 +276,16 @@ All the overridden org-mode variables
              (org-superstar-mode)
              (org-pretty-tags-mode)
              (add-hook 'post-self-insert-hook #'my/latex-fragment-completion 'append 'local)))
+#+END_SRC
+
+** Org-roam
+#+BEGIN_SRC elisp
+
+;; org-roam configurations
+(after! org-roam
+  (setq-default org-roam-directory (concat org-directory "/roam"))
+  (after! deft
+    (setq-default deft-directory org-roam-directory)))
 
 (add-hook 'org-roam-mode-hook
           '(lambda ()
@@ -262,30 +293,93 @@ All the overridden org-mode variables
              (org-mode)
              ;; Do I want this in all org buffers?
              (org-zotxt-mode)))
+#+END_SRC
+** Citation management
+This is a great big mess. You really need to figure it out at some point.
 
+Here are some keybindings for common
+#+BEGIN_SRC elisp
+(map! :after org
+      :map org-mode-map
+      :localleader
+      :prefix ("z" . "org-zotxt")
+      "i" #'org-zotxt-insert-reference-link
+      "u" #'org-zotxt-update-reference-link-at-point
+      "o" #'org-zotxt-open-attachment)
+#+END_SRC
+
+#+BEGIN_SRC elisp
+;; Should this be ~after!~ something?
+(setq! +biblio-pdf-library-dir (concat org-directory "/biblio/pdfs/")
+       +biblio-default-bibliography-files (directory-files
+                                           (concat org-directory "/biblio/bibs")
+                                           t directory-files-no-dot-files-regexp)
+       +biblio-notes-path (concat org-directory "/biblio/notes/"))
+#+END_SRC
+
+We have to ensure that we open pdfs by looking up the bibliography ~file~ field, rather than by looking in a pdf directory.
+#+BEGIN_SRC elisp
+(after! org-roam-bibtex
+  (setq! org-ref-get-pdf-filename-function 'org-ref-get-pdf-filename-helm-bibtex)
+  (setq! orb-persp-project `("notes" . ,+biblio-notes-path)))
+#+END_SRC
+
+Now, in order for ~org-ref-open-notes-at-point~ (via ~orb-edit-notes~) to work properly, I need in particular to set some ~orb-templates~ that will put the notes in the right subdirectory and so forth. To get started, I’ve *shamelessly* copied the templates of the illustrious [[https://github.com/zaeph/.emacs.d/blob/0f4bf9a500ef6397b93c41cb51602bea9ab9a4c3/init.el][Leo Vivier]], tweaking them only a little to my tastes.
+#+BEGIN_SRC elisp
+(defvar my/orb-header
+  (s-join "\n"
+          (list
+           "#+title: ${title}"
+           "#+author: ${author-or-editor}"))
+  "Format of the header to use for `orb-templates'.")
+
+(setq! orb-templates
+       `(("r" "ref" plain
+          (function org-roam-capture--get-point)
+          ""
+          :file-name "refs/${slug}"
+          :head ,(s-join "\n"
+                         (list
+                          my/orb-header
+                          "#+roam_key: ${ref}"
+                          "#+created: %U"
+                          "#+last_modified: %U\n\n"))
+          :unnarrowed t)
+         ("p" "ref + physical" plain
+          (function org-roam-capture--get-point)
+          ""
+          :file-name "refs/${slug}"
+          :head ,(s-join "\n"
+                         (list
+                          my/orb-header
+                          "#+roam_key: ${ref}"
+                          ""
+                          "* Notes :physical:")))
+         ("n" "ref + noter" plain
+          (function org-roam-capture--get-point)
+          ""
+          :file-name "refs/${slug}"
+          :head ,(s-join "\n"
+                         (list
+                          my/orb-header
+                          "#+roam_key: ${ref}"
+                          ""
+                          "* Notes :noter:"
+                          ":PROPERTIES:"
+                          ":NOTER_DOCUMENT: %(orb-process-file-field \"${=key=}\")"
+                          ":NOTER_PAGE:"
+                          ":END:")))))
+#+END_SRC
+
+** Org-journal
+#+BEGIN_SRC elisp
 ;; org-journal configurations
 (after! org-journal
   (setq-default org-journal-dir (concat org-directory "/journal")
                 org-journal-encrypt-journal t
                 org-journal-file-type 'weekly))
-
-;; org-roam configurations
-(after! org-roam
-  (setq-default org-roam-directory (concat org-directory "/roam")))
-
-;; deft directory
-(after! org-roam
-  (after! deft
-    (setq-default deft-directory org-roam-directory)))
-
-;; alert configurations
-(after! alert
-  (setq-default alert-default-style 'libnotify
-                ;; alerts fade out after 15 seconds
-                alert-fade-time 30))
-
-(add-hook 'after-init-hook 'org-wild-notifier-mode)
 #+END_SRC
+
 * Documents
 Some pdf viewing preferences: use the ~ewal~ colors, and start in ~midnight-minor-mode~.
 #+BEGIN_SRC elisp
@@ -300,49 +394,15 @@ Some pdf viewing preferences: use the ~ewal~ colors, and start in ~midnight-mino
 ;; Start in midnight mode!
 (add-hook 'pdf-view-mode-hook #'pdf-view-midnight-minor-mode)
 #+END_SRC
-* Citation management
-This is a great big mess. You really need to figure it out at some point.
-#+BEGIN_SRC elisp
-;; (defun my/org-zotxt-get-bibtex () 1)
 
-;; (defun my/org-zotxt-find-attachment () 1)
-
-;; (defun my/org-zotxt-insert-reference-link-with-ref () 1)
-
-;; (defun org-zotxt-insert-reference-link (&optional arg)
-;;  "Insert a zotero link in the `org-mode' document.
-
-(map! :after org
-      :map org-mode-map
-      :localleader
-      :prefix ("z" . "org-zotxt")
-      "i" #'org-zotxt-insert-reference-link
-      "u" #'org-zotxt-update-reference-link-at-point
-      "o" #'org-zotxt-open-attachment)
-
-;; Should this be ~after!~ something?
-(setq! +biblio-pdf-library-dir (concat org-directory "/biblio/pdfs/")
-       +biblio-default-bibliography-files (directory-files
-                                           (concat org-directory "/biblio/bibs")
-                                           t directory-files-no-dot-files-regexp)
-       +biblio-notes-path (concat org-directory "/biblio/notes/"))
-
-#+END_SRC
-
-We have to ensure that we open pdfs by looking up the bibliography ~file~ field, rather than by looking in a pdf directory.
-#+BEGIN_SRC elisp
-(after! org-roam-bibtex
-  ;; Do I need this?
-  (setq org-ref-get-pdf-filename-function 'org-ref-get-pdf-filename-helm-bibtex)
-  (setq! orb-persp-project `("notes" . ,+biblio-notes-path)))
-#+END_SRC
 * Email
-These are the bits that I want to keep private
+Here are the public parts of my email configuration. First, we’ll import the bits that I want to keep private.
 #+BEGIN_SRC elisp
 (after! mu4e
   (load! "./mu4e-config.el"))
 #+END_SRC
 
+These settings specify how to retrieve mail.
 #+BEGIN_SRC elisp
 (setq
  +mu4e-backend 'offlineimap
@@ -351,7 +411,10 @@ These are the bits that I want to keep private
  message-kill-buffer-on-exit t
  ;; should just quit when I type `q`
  mu4e-confirm-quit nil)
+#+END_SRC
 
+And these are just setting up usual text-viewing minor modes. I wonder if I should fold these into ~text-mode~, since they’re redundant with some of the ~org-mode~ minor modes.
+#+BEGIN_SRC elisp
 ;; TODO are line breaks still not handled correctly?
 (add-hook 'mu4e-view-mode-hook 'olivetti-mode)
 (add-hook 'mu4e-compose-mode-hook
@@ -363,6 +426,7 @@ These are the bits that I want to keep private
              (flyspell-mode))
           t)
 #+END_SRC
+
 * Odds and ends
 A fun little thing you can do in Emacs 27. Function due to an internet stranger, whom I should cite if I ever find them again.
 #+BEGIN_SRC elisp
@@ -377,18 +441,13 @@ Saves to a temp file and puts the filename in the kill ring."
     (kill-new filename)
     (message filename)))
 #+END_SRC
-
-I would like the ~wordnut~ buffer window to disappear when I press ~q~ or ~Esc~ or something like that.
+** Notifications
 #+BEGIN_SRC elisp
-;; Dictionaries
-;; Instead of doing this, could you instead just open it in the minibuffer,
-;; where this is a default behavior?
-;;
-;; Should perhaps use the popup module for this.
-;;
-;; (map! ;; :after org
-;;       :map wordnut-mode-map
-;;       ;; :localleader
-;;       ;; :prefix ("z" . "org-zotxt")
-;;       "q" #'delete-window)
+;; alert configurations
+(after! alert
+  (setq-default alert-default-style 'libnotify
+                ;; alerts fade out after 30 seconds
+                alert-fade-time 30))
+
+(add-hook 'after-init-hook 'org-wild-notifier-mode)
 #+END_SRC
