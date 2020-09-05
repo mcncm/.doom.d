@@ -6,6 +6,9 @@ Use lexical binding /always/; otherwise, ~let~ constructs will not behave intuit
 #+BEGIN_SRC elisp
 ;;; $DOOMDIR/config.el -*- lexical-binding: t; -*-
 #+END_SRC
+* Introduction
+** Conventions
+“Personal” variables and functions have the prefix ~my/~ as a namespacing convention.
 * Default Doom config preamble
 This is just the block at the top of the ~config.el~ that ships with Doom Emacs, modified to my current tastes. There’s nothing especially interesting here.
 #+BEGIN_SRC elisp
@@ -69,21 +72,24 @@ This is just the block at the top of the ~config.el~ that ships with Doom Emacs,
 ;; You can also try 'gd' (or 'C-c c d') to jump to their definition and see how
 ;; they are implemented.
 #+END_SRC
-
 * Generalities
-Behold, the dodecahedron!
-#+BEGIN_SRC elisp
-(setq +doom-dashboard-banner-dir "~/.doom.d/banner")
-(setq my/banner-template-file "dodecahedron.svg")
-(setq +doom-dashboard-banner-file "banner.svg")
-#+END_SRC
+** Some better defaults
+I’d like to set some variables that generally make life better.
 
 Here I’m trying to more closely match the [[https://www.spacemacs.org/][Spacemacs]] convention that I like. I'm still not sure what the default “repeat” behavior of the comma key actually /does/. For all I know, I might prefer it. In any case, I should also see if I ought to unmap that key first. Note that this *unmaps* ~SPC-m~.
 #+BEGIN_SRC elisp
 (setq doom-localleader-key ",")
 #+END_SRC
 
-Some helper keybindings for quickly finding files in my home directory and agenda.
+And here are some miscellaneous settings.  All of these are snagged from [[https://tecosaur.github.io/emacs-config/config.html#better-defaults][tecosaur]], who in turn got them from a much larger list of “better defaults” from [[https://github.com/angrybacon/dotemacs/blob/master/dotemacs.org#use-better-defaults][angrybacon]].
+#+BEGIN_SRC elisp
+(setq-default
+ delete-by-moving-to-trash t)
+
+(setq undo-limit 80000000
+      truncate-string-ellipsis "…")
+#+END_SRC
+** Little helper functions
 #+BEGIN_SRC elisp
 (defun my/find-file-in-home ()
   "Search for a file in home directory."
@@ -96,19 +102,54 @@ Some helper keybindings for quickly finding files in my home directory and agend
   "Search for a file in home directory."
   (interactive)
   (ido-find-file-in-dir my/org-agenda-directory))
+#+END_SRC
 
+I want these bound to convenient keys to quickly find files in my home directory and agenda.
+#+BEGIN_SRC elisp
 (map! :map doom-leader-file-map
       "h" #'my/find-file-in-home
       "a" #'my/find-file-in-agenda)
 #+END_SRC
 
-Here’s a little auxiliary function for retrieving ~ewal~ palette colors. I’m not sure if there’s already a function that accomplishes this, but if there is I should use it.
+Here are two little auxiliary functions for retrieving palette colors. I’m not sure if there’s already a (presumably Doom-specific) function that accomplishes this, but if there is I should use it.
 #+BEGIN_SRC elisp
 (defun my/ewal-color (color)
   "COLOR should be a symbol defined in ewal-base-palette. Options are:
 'comment, 'background, 'foreground, 'cursor, 'black, 'red,
 'green, 'yellow, 'blue, 'magenta, 'cyan, 'white"
   (cdr (assoc color ewal-base-palette)))
+
+(defun my/theme-color (color)
+  "A generalization of ~my/ewal-color~ that should with for all Doom themes. COLOR should be a key in ~doom-themes--colors~."
+  (let ((color-spec                 ;; a list with four elements
+         (seq-find
+         (lambda (x) (eq (car x) color)) ;; take the matching one
+         doom-themes--colors)))
+    (car (cdr color-spec))          ;; return the second element
+    ))
+#+END_SRC
+
+** Behold the dodecahedron!
+This is my Doom banner, or splash screen icon. I’d also like to change it from time to time, but I like this dodecahedron well enough.
+#+BEGIN_SRC elisp
+(setq +doom-dashboard-banner-dir "~/.doom.d/banner")
+(setq my/banner-template-file "dodecahedron.svg")
+(setq +doom-dashboard-banner-file "banner.svg")
+#+END_SRC
+
+A fun little trick and terrible hack to recolor the banner. Maybe I should try ~async-shell-command~ rather than ~shell-command~?
+#+BEGIN_SRC elisp
+(defun my/recolor-banner ()
+  (shell-command
+   (concat "sed -e \"s/#000000/"          ;; replace all black strokes…
+           (my/theme-color 'blue) "/g\" "  ;; g flag to replace all on line
+           +doom-dashboard-banner-dir "/" my/banner-template-file " > "
+           +doom-dashboard-banner-dir "/" +doom-dashboard-banner-file)))
+#+END_SRC
+
+Let’s run this when we change themes, so it’s colored correctly.
+#+BEGIN_SRC elisp
+(add-hook 'doom-load-theme-hook #'my/recolor-banner)
 #+END_SRC
 
 * Fonts, faces, and characters
@@ -158,23 +199,6 @@ Fira Code is a pretty nice programming font, and I like its ligatures and specia
 #+BEGIN_SRC elisp
 (custom-set-variables '(fira-code-mode-disabled-ligatures '("[]" "#{" "#(" "#[" "#_(" "x")))
 (add-hook 'prog-mode-hook 'fira-code-mode)
-#+END_SRC
-
-** Banner
-A fun little trick: recolor the banner! Using ~async-shell-command~ could be a problem. Maybe try ~shell-command~.
-#+BEGIN_SRC elisp
-(defun my/recolor-banner ()
-  (message "recoloring banner")
-  (shell-command
-   (concat "sed -e \"s/#000000/"
-           (my/ewal-color 'blue) "/\" "
-           +doom-dashboard-banner-dir "/" my/banner-template-file " > "
-           +doom-dashboard-banner-dir "/" +doom-dashboard-banner-file)))
-#+END_SRC
-
-TODO: Figure out how to do this correctly!
-#+BEGIN_SRC elisp
-;; (advice-add 'load-theme :after #'my/recolor-banner)
 #+END_SRC
 
 * Programming
@@ -234,7 +258,7 @@ All the overridden org-mode variables
 #+BEGIN_SRC elisp
 (after! org
   (setq-default
-   org-log-done 'time
+   org-log-done 'time  ;; when a task is finished, log the time
    org-hide-emphasis-markers t
    org-startup-with-latex-preview t
    org-agenda-files (directory-files my/org-agenda-directory t "\.org$")
@@ -314,7 +338,7 @@ Here are some keybindings for common
        +biblio-default-bibliography-files (directory-files
                                            (concat org-directory "/biblio/bibs")
                                            t directory-files-no-dot-files-regexp)
-       +biblio-notes-path (concat org-directory "/biblio/notes/"))
+       +biblio-notes-path (concat org-roam-directory "/refs/"))
 #+END_SRC
 
 We have to ensure that we open pdfs by looking up the bibliography ~file~ field, rather than by looking in a pdf directory.
@@ -327,10 +351,9 @@ We have to ensure that we open pdfs by looking up the bibliography ~file~ field,
 Now, in order for ~org-ref-open-notes-at-point~ (via ~orb-edit-notes~) to work properly, I need in particular to set some ~orb-templates~ that will put the notes in the right subdirectory and so forth. To get started, I’ve *shamelessly* copied the templates of the illustrious [[https://github.com/zaeph/.emacs.d/blob/0f4bf9a500ef6397b93c41cb51602bea9ab9a4c3/init.el][Leo Vivier]], tweaking them only a little to my tastes.
 #+BEGIN_SRC elisp
 (defvar my/orb-header
-  (s-join "\n"
-          (list
-           "#+title: ${title}"
-           "#+author: ${author-or-editor}"))
+          (concat
+           "#+title: ${title}\n"
+           "#+author: ${author-or-editor}")
   "Format of the header to use for `orb-templates'.")
 
 (setq! orb-templates
@@ -338,37 +361,33 @@ Now, in order for ~org-ref-open-notes-at-point~ (via ~orb-edit-notes~) to work p
           (function org-roam-capture--get-point)
           ""
           :file-name "refs/${slug}"
-          :head ,(s-join "\n"
-                         (list
-                          my/orb-header
-                          "#+roam_key: ${ref}"
-                          "#+created: %U"
-                          "#+last_modified: %U\n\n"))
+          :head ,(concat
+                  my/orb-header "\n"
+                  "#+roam_key: ${ref}\n"
+                  "#+created: %U\n"
+                  "#+last_modified: %U\n\n")
           :unnarrowed t)
          ("p" "ref + physical" plain
           (function org-roam-capture--get-point)
           ""
           :file-name "refs/${slug}"
-          :head ,(s-join "\n"
-                         (list
-                          my/orb-header
-                          "#+roam_key: ${ref}"
-                          ""
-                          "* Notes :physical:")))
+          :head ,(concat
+                  my/orb-header
+                  "#+roam_key: ${ref}\n"
+                  "\n"
+                  "* Notes :physical:\n"))
          ("n" "ref + noter" plain
           (function org-roam-capture--get-point)
           ""
           :file-name "refs/${slug}"
-          :head ,(s-join "\n"
-                         (list
-                          my/orb-header
-                          "#+roam_key: ${ref}"
-                          ""
-                          "* Notes :noter:"
-                          ":PROPERTIES:"
-                          ":NOTER_DOCUMENT: %(orb-process-file-field \"${=key=}\")"
-                          ":NOTER_PAGE:"
-                          ":END:")))))
+          :head ,(concat
+                  my/orb-header
+                  "#+roam_key: ${ref}\n\n"
+                  "* Notes :noter:\n"
+                  ":PROPERTIES:\n"
+                  ":NOTER_DOCUMENT: %(orb-process-file-field \"${=key=}\")\n"
+                  ":NOTER_PAGE:\n"
+                  ":END:\n"))))
 #+END_SRC
 
 ** Org-journal
@@ -441,6 +460,14 @@ Saves to a temp file and puts the filename in the kill ring."
     (kill-new filename)
     (message filename)))
 #+END_SRC
+
+I’d like my dictionary popups to fill a little more of the screen than they do by default.
+#+BEGIN_SRC elisp
+(set-popup-rule! "^\\*WordNut"
+  ;; :action
+  :height 0.3   ;; fill this much of the screen
+  )
+#+END_SRC
 ** Notifications
 #+BEGIN_SRC elisp
 ;; alert configurations
@@ -451,3 +478,5 @@ Saves to a temp file and puts the filename in the kill ring."
 
 (add-hook 'after-init-hook 'org-wild-notifier-mode)
 #+END_SRC
+
+#  LocalWords:  config
