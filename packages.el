@@ -55,6 +55,7 @@
 (package! org-superstar)
 (package! org-pretty-tags)
 (package! org-wild-notifier)
+(package! org-roam-server)
 (package! fira-code-mode)
 (package! ivy-bibtex)
 (package! zotxt)

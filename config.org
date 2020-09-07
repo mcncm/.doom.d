@@ -120,29 +120,49 @@ Here are two little auxiliary functions for retrieving palette colors. I’m not
   (cdr (assoc color ewal-base-palette)))
 
 (defun my/theme-color (color)
-  "A generalization of ~my/ewal-color~ that should with for all Doom themes. COLOR should be a key in ~doom-themes--colors~."
+  "A generalization of `my/ewal-color` that should with for all Doom themes. COLOR should be a key in `doom-themes--colors`. Returns a hex code."
   (let ((color-spec                 ;; a list with four elements
          (seq-find
          (lambda (x) (eq (car x) color)) ;; take the matching one
          doom-themes--colors)))
-    (car (cdr color-spec))          ;; return the second element
+    (if color-spec
+        (car (cdr color-spec))      ;; return the second elemend
+      nil)                          ;; …if it exists.
     ))
 #+END_SRC
-
 ** Behold the dodecahedron!
 This is my Doom banner, or splash screen icon. I’d also like to change it from time to time, but I like this dodecahedron well enough.
 #+BEGIN_SRC elisp
-(setq +doom-dashboard-banner-dir "~/.doom.d/banner")
-(setq my/banner-template-file "dodecahedron.svg")
-(setq +doom-dashboard-banner-file "banner.svg")
+(setq +doom-dashboard-banner-dir "~/.doom.d/banner"
+      my/banner-template-file "dodecahedron.svg"
+      +doom-dashboard-banner-file "banner.svg")
 #+END_SRC
 
-A fun little trick and terrible hack to recolor the banner. Maybe I should try ~async-shell-command~ rather than ~shell-command~?
+A fun little trick and terrible hack to recolor the banner. Maybe I should try ~async-shell-command~ rather than ~shell-command~? We can even set an override color on a per-theme basis.
 #+BEGIN_SRC elisp
+;; TODO I think I'm probably supposed to ~defvar~ these so they're properly
+;; documented.
+(setq my/theme-banner-color-overrides
+      '((doom-gruvbox-light . red)
+        (poet . yellow))
+      my/banner-color-default 'blue)
+
+(defun my/theme-banner-color ()
+  "Get the preferred banner color for the current `doom-theme` as a hex code."
+    (let* ((pair (seq-find
+                 (lambda (pair) (eq (car pair) doom-theme))
+                 my/theme-banner-color-overrides))
+          (color (if pair (cdr pair) my/banner-color-default)))
+      (my/theme-color color)))
+
 (defun my/recolor-banner ()
+  "Recolor the banner image to the preferred color for the current theme."
   (shell-command
-   (concat "sed -e \"s/#000000/"          ;; replace all black strokes…
-           (my/theme-color 'blue) "/g\" "  ;; g flag to replace all on line
+   (concat "sed -e \""
+           ;; replace black with the banner color
+           "s/#000000/" (my/theme-banner-color) "/g" "; "
+           ;; replace white with background color
+           "s/#FFFFFF/" (my/theme-color 'bg) "/g" "\" "
            +doom-dashboard-banner-dir "/" my/banner-template-file " > "
            +doom-dashboard-banner-dir "/" +doom-dashboard-banner-file)))
 #+END_SRC
@@ -211,12 +231,28 @@ Not necessary if using ~:editor format-all~ (or something like this? I forget wh
 
 I want to ensure that my compilation buffers show up on the right-hand side. Check the documentation for ~set-popup-rule!~ to find out about all the keys you can use for this.
 #+BEGIN_SRC elisp
-(set-popup-rule! "^\\*rustic"
-  ;; :select t    ;; focus the window after it opens
-  ;; :action
-  :side 'right ;; on the rhs of the screen
-  :width 0.5   ;; and fill 50% of it.
+(after! popup
+  (set-popup-rule! "^\\*rustic"
+    :select t    ;; focus the window after it opens
+    ;; :action
+    :side 'right ;; on the rhs of the screen
+    :width 0.5   ;; and fill 50% of it.
   )
+)
+#+END_SRC
+
+It is sometimes advised, I think, to abrogate the use of advice. But I thought it would be much nicer to use this approach here than to define an entirely /new/ function and to bind it to some unused key or to override the binding for  ~rustic-cargo-run~. This is a much simpler version of the function ~cargo-comint-run~  appearing in my Spacemacs config.
+#+BEGIN_SRC elisp
+(defadvice! cargo-run-comint ()
+  "After calling `rustic-cargo-run`, enter comint mode and make the buffer editable."
+  :after #'rustic-cargo-run
+  (evil-goto-line))
+  ;; (sleep-for 1)
+  ;;  (comint-mode)
+  ;;  (read-only-mode 0)
+  ;;  (evil-goto-line)
+  ;;  (evil-append-line))
+  ;; (read-only-mode 0))
 #+END_SRC
 
 ** Company
@@ -244,7 +280,7 @@ Will this make ~company-mode~ work?
 ** Main Org-mode settings
 A little helper function for completing latex fragments. Some notes:
 + Newlines aren’t working. It might be that you’re supposed to use a "character class" like [:space:] or \s-, but neither of these
-+ ~looking-back~ is known to be quite slow. See: https://emacs.stackexchange.com/a/12744
++ ~looking-back~ is known to be quite slow. See [[https://emacs.stackexchange.com/a/12744][this answer]].
 #+BEGIN_SRC elisp
 (defun my/latex-fragment-completion ()
   ;; This regexp will trigger LaTeX compilation whenever following a '$' character by an optional punctuation character and whitespace.
@@ -258,7 +294,7 @@ All the overridden org-mode variables
 #+BEGIN_SRC elisp
 (after! org
   (setq-default
-   org-log-done 'time  ;; when a task is finished, log the time
+   org-log-done 'time  ;; when finishing a task, log the time
    org-hide-emphasis-markers t
    org-startup-with-latex-preview t
    org-agenda-files (directory-files my/org-agenda-directory t "\.org$")
@@ -272,10 +308,10 @@ All the overridden org-mode variables
               org-latex-packages-extra))
   ;; This will render the bullets more correctly!
   (set-face-attribute 'org-superstar-header-bullet nil :family "Fira Code")
-  ;; actually a beaker
+  ;; If this doesn’t render correctly: it’s a beaker
   (push '("research" . "") org-pretty-tags-surrogate-strings)
-  ;; actually a book
-  ;; (push '("read" . "read") org-pretty-tags-surrogate-strings)
+  ;; If this doesn’t render correctly: it’s a book
+  (push '("physical" . "") org-pretty-tags-surrogate-strings)
 
   ;; Overwrites the app that should be used to open pdfs from Emacs. This was
   ;; originally set to ~default~ in org.el, which uses the "system default pdf
@@ -304,7 +340,6 @@ All the overridden org-mode variables
 
 ** Org-roam
 #+BEGIN_SRC elisp
-
 ;; org-roam configurations
 (after! org-roam
   (setq-default org-roam-directory (concat org-directory "/roam"))
@@ -318,6 +353,25 @@ All the overridden org-mode variables
              ;; Do I want this in all org buffers?
              (org-zotxt-mode)))
 #+END_SRC
+
+I’m also using ~org-roam-server~ to visualize the org graph. So far, these settings are the defaults from the [[https://github.com/org-roam/org-roam-server#Installation][installation instructions]], except that I’ve incremented to port number to something less common, and removed the ~:ensure~ attribute, which Doom Emacs discourages.
+
+#+BEGIN_SRC elisp
+(use-package! org-roam-server
+  :config
+  (setq org-roam-server-host "127.0.0.1"
+        org-roam-server-port 8081
+        org-roam-server-authenticate nil
+        org-roam-server-export-inline-images t
+        org-roam-server-serve-files nil
+        org-roam-server-served-file-extensions '("pdf" "mp4" "ogv")
+        org-roam-server-network-poll t
+        org-roam-server-network-arrows nil
+        org-roam-server-network-label-truncate t
+        org-roam-server-network-label-truncate-length 60
+        org-roam-server-network-label-wrap-length 20))
+#+END_SRC
+
 ** Citation management
 This is a great big mess. You really need to figure it out at some point.
 
@@ -334,6 +388,7 @@ Here are some keybindings for common
 
 #+BEGIN_SRC elisp
 ;; Should this be ~after!~ something?
+;; TODO review this section, see which settings you actually need.
 (setq! +biblio-pdf-library-dir (concat org-directory "/biblio/pdfs/")
        +biblio-default-bibliography-files (directory-files
                                            (concat org-directory "/biblio/bibs")
@@ -372,7 +427,7 @@ Now, in order for ~org-ref-open-notes-at-point~ (via ~orb-edit-notes~) to work p
           ""
           :file-name "refs/${slug}"
           :head ,(concat
-                  my/orb-header
+                  my/orb-header "\n"
                   "#+roam_key: ${ref}\n"
                   "\n"
                   "* Notes :physical:\n"))
@@ -381,7 +436,7 @@ Now, in order for ~org-ref-open-notes-at-point~ (via ~orb-edit-notes~) to work p
           ""
           :file-name "refs/${slug}"
           :head ,(concat
-                  my/orb-header
+                  my/orb-header "\n"
                   "#+roam_key: ${ref}\n\n"
                   "* Notes :noter:\n"
                   ":PROPERTIES:\n"
@@ -402,6 +457,15 @@ Now, in order for ~org-ref-open-notes-at-point~ (via ~orb-edit-notes~) to work p
 * Documents
 Some pdf viewing preferences: use the ~ewal~ colors, and start in ~midnight-minor-mode~.
 #+BEGIN_SRC elisp
+(defun my/set-pdf-view-midnight-colors ()
+  "Sets the colors for viewing pdfs in 'dark mode'"
+  (interactive)
+  (setq pdf-view-midnight-colors
+        `(,(my/theme-color 'fg) .
+          ,(my/theme-color 'bg))))
+
+;; TODO add a load-theme hook for this
+
 ;; Does the framework allow this kind of nesting of these macros?
 (after! pdf
   (after! ewal-doom-themes
@@ -446,6 +510,55 @@ And these are just setting up usual text-viewing minor modes. I wonder if I shou
           t)
 #+END_SRC
 
+* Technical drawing
+I’d like to be able to run a single command and add or update an ~.svg~ in-place. Here are some little commands to do this, inspired by [[https://castel.dev/post/lecture-notes-2/][Gilles Castel]], whose scripts I’m shamelessly using.
+
+#+BEGIN_SRC elisp
+(defun my/figure-dir ()
+  "Return the directory where figures are saved"
+  (concat default-directory "figures/"))
+
+(defun my/inkscape-figures ()
+  "Creates a new figure in Inkscape"
+  (interactive)
+  (let*
+      ((no-dots directory-files-no-dot-files-regexp)
+       (figure-dir (my/figure-dir))
+       (figure-name
+        ;; get the figure name by asking the user for it
+        (progn
+          ;; make the figure directory if it doesn’t exist
+          (if (not (file-exists-p figure-dir))
+              (mkdir figure-dir))
+          (concat
+           ;; query the user for a figure name
+           (completing-read
+            "Figure name: "
+            (mapcar #'file-name-nondirectory
+             (mapcar #'file-name-sans-extension
+                   (directory-files figure-dir t no-dots))))))))
+
+    (if (file-exists-p (concat figure-dir figure-name))
+      ;; run the command to edit the figure
+      (shell-command
+       (concat "inkscape-figures edit " figure-dir figure-name))
+      ;; otherwise, run the command to create the figure
+      (shell-command
+       (concat "inkscape-figures create " figure-dir figure-name)))
+
+    ;; return the figure name
+    figure-name))
+#+END_SRC
+
+I’d also like to provide some convenience functions for automatically inserting these in various text modes. This is a work in progress.
+#+BEGIN_SRC elisp
+(defun my/inkscape-figures-insert ()
+  "Create or edit and insert in inkscape figure in an Org buffer"
+  (interactive)
+  (let ((figure-name (my/inkscape-figures)))
+    (insert (concat "[[" (my/figure-dir) figure-name ".svg]]"))))
+#+END_SRC
+
 * Odds and ends
 A fun little thing you can do in Emacs 27. Function due to an internet stranger, whom I should cite if I ever find them again.
 #+BEGIN_SRC elisp
@@ -479,4 +592,4 @@ I’d like my dictionary popups to fill a little more of the screen than they do
 (add-hook 'after-init-hook 'org-wild-notifier-mode)
 #+END_SRC
 
-#  LocalWords:  config
+#  LocalWords:  config namespacing
