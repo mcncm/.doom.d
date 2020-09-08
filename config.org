@@ -2,14 +2,16 @@
 #+AUTHOR: mcncm
 #+PROPERTY: header-args :emacs-lisp :tangle yes :comments no :cache yes :results silent
 #+STARTUP: org-startup-folded: showall
-Use lexical binding /always/; otherwise, ~let~ constructs will not behave intuitively. Note that for this header to work properly in a literate config, we must include the ~:comments no~ attribute in the headers above, and it must come /after/ ~:tangle yes~. This attribute can also be set for each block.
+* Introduction
+I’ve been migrating from Spacemacs to Doom Emacs, which has made it easier than ever to write a maintainable, human-readable config document. This represents my “first best effort” at translating my previous config.
+** Conventions
++ “Personal” variables and functions have the prefix ~my/~ as a namespacing convention.
+* Default Doom config preamble
+Use lexical binding /always/; otherwise, ~let~ constructs will not behave intuitively. Note that for this header to work properly in a literate config, we must include the ~:comments no~ attribute in the headers above, and it must come /after/ ~:tangle yes~. You can also set this attribute for each block.
 #+BEGIN_SRC elisp
 ;;; $DOOMDIR/config.el -*- lexical-binding: t; -*-
 #+END_SRC
-* Introduction
-** Conventions
-“Personal” variables and functions have the prefix ~my/~ as a namespacing convention.
-* Default Doom config preamble
+
 This is just the block at the top of the ~config.el~ that ships with Doom Emacs, modified to my current tastes. There’s nothing especially interesting here.
 #+BEGIN_SRC elisp
 ;; Place your private configuration here! Remember, you do not need to run 'doom
@@ -134,7 +136,7 @@ Here are two little auxiliary functions for retrieving palette colors. I’m not
 This is my Doom banner, or splash screen icon. I’d also like to change it from time to time, but I like this dodecahedron well enough.
 #+BEGIN_SRC elisp
 (setq +doom-dashboard-banner-dir "~/.doom.d/banner"
-      my/banner-template-file "dodecahedron.svg"
+      my/banner-template-file "imperial_encyclopedia.svg"
       +doom-dashboard-banner-file "banner.svg")
 #+END_SRC
 
@@ -171,7 +173,40 @@ Let’s run this when we change themes, so it’s colored correctly.
 #+BEGIN_SRC elisp
 (add-hook 'doom-load-theme-hook #'my/recolor-banner)
 #+END_SRC
+** Odds and ends
+A fun little thing you can do in Emacs 27. Function due to an internet stranger, whom I should cite if I ever find them again.
+#+BEGIN_SRC elisp
+(defun screenshot-svg ()
+  "Save a screenshot of the current frame as an SVG image.
+Saves to a temp file and puts the filename in the kill ring."
+  (interactive)
+  (let* ((filename (make-temp-file "Emacs" nil ".svg"))
+         (data (x-export-frames nil 'svg)))
+    (with-temp-file filename
+      (insert data))
+    (kill-new filename)
+    (message filename)))
+#+END_SRC
 
+I’d like my dictionary popups to fill a little more of the screen than they do by default.
+#+BEGIN_SRC elisp
+(set-popup-rule! "^\\*WordNut"
+  ;; :action
+  :height 0.3   ;; fill this much of the screen
+  )
+#+END_SRC
+*** Notifications
+#+BEGIN_SRC elisp
+;; alert configurations
+(after! alert
+  (setq-default alert-default-style 'libnotify
+                ;; alerts fade out after 30 seconds
+                alert-fade-time 30))
+
+(add-hook 'after-init-hook 'org-wild-notifier-mode)
+#+END_SRC
+
+#  LocalWords:  config namespacing zitieren noter
 * Fonts, faces, and characters
 ** Better color defaults
 Fix some pretty awful ~lsp~ colors. To check: are all these ~after!~ macros expensive? Are they hurting my startup time? Should I be putting them in some specific order?
@@ -254,7 +289,52 @@ It is sometimes advised, I think, to abrogate the use of advice. But I thought i
   ;;  (evil-append-line))
   ;; (read-only-mode 0))
 #+END_SRC
+** Python
+For some reason, Doom’s Python module is relatively impoverished compared to the Spacemacs Python layer, in that few of the keybindings are evil-ified. I’m trying to make up the difference here.
 
+First, a little helper macro for do-and-switch-to-window functions, which will be helpful for defining these keybindings:
+#+BEGIN_SRC elisp
+(defmacro my/do-and-switch (action buffer-name)
+  "Accepts some ACTION and BUFFER-NAME, and produces a lambda that performs the action and switches to the window presenting the corresponding buffer."
+  `(lambda ()
+    (interactive)
+    (,action)
+    (let ((win (display-buffer ,buffer-name nil 'visible)))
+      (select-window win)
+      (evil-insert))))
+#+END_SRC
+
+Now let’s use that macro to set some bindings. I should modify this so that ~i~ starts a repl if there is none, and runs ~python-shell-switch-to-shell~ if there is not. Also, these are producing ~Wrong number of arguments~ errors for some reason.
+#+BEGIN_SRC elisp
+(map! :after python
+      :map python-mode-map
+      :localleader
+      :prefix ("s" . "shell")
+      "i" #'+python/open-ipython-repl
+      "I" (my/do-and-switch +python/open-ipython-repl "*Python*")
+      "s" #'python-shell-send-statement
+      "S" (my/do-and-switch python-shell-send-statement "*Python")
+      "s" #'python-shell-send-region
+      "S" (my/do-and-switch python-shell-send-region "*Python")
+      "b" #'python-shell-send-buffer
+      "B" (my/do-and-switch python-shell-send-buffer "*Python*")
+      "f" #'python-shell-send-file
+      "F" (my/do-and-switch python-shell-send-file "*Python*"))
+#+END_SRC
+
+I also want the shell to feel less ‘transient.’
+#+BEGIN_SRC elisp
+(after! popup
+  (set-popup-rule! "^\\*Python"
+    :select nil  ;; don’t auto-focus the window
+                 ;; instead, use the commands defined above
+    ;; :action
+    :side 'right ;; on the rhs of the screen
+    :width 0.5   ;; and fill 50% of it.
+    :quit nil
+  )
+)
+#+END_SRC
 ** Company
 Will this make ~company-mode~ work?
 #+BEGIN_SRC elisp
@@ -312,6 +392,8 @@ All the overridden org-mode variables
   (push '("research" . "") org-pretty-tags-surrogate-strings)
   ;; If this doesn’t render correctly: it’s a book
   (push '("physical" . "") org-pretty-tags-surrogate-strings)
+  ;; If tihs doesn’t render correctly: it’s a sticky note
+  (push '("noter" . "") org-pretty-tags-surrogate-strings)
 
   ;; Overwrites the app that should be used to open pdfs from Emacs. This was
   ;; originally set to ~default~ in org.el, which uses the "system default pdf
@@ -338,7 +420,7 @@ All the overridden org-mode variables
              (add-hook 'post-self-insert-hook #'my/latex-fragment-completion 'append 'local)))
 #+END_SRC
 
-** Org-roam
+*** Org-roam
 #+BEGIN_SRC elisp
 ;; org-roam configurations
 (after! org-roam
@@ -375,25 +457,38 @@ I’m also using ~org-roam-server~ to visualize the org graph. So far, these set
 ** Citation management
 This is a great big mess. You really need to figure it out at some point.
 
-Here are some keybindings for common
+Here are some keybindings for common things you might want to do with ~org-zotxt~. However, note that this is deprecated now that I’m using ~org-roam-bibtex~. The ~z~ originally stood for ~zotxt~, but it now makes sense to broaden the mnemonic to /zitieren/.
 #+BEGIN_SRC elisp
 (map! :after org
       :map org-mode-map
       :localleader
-      :prefix ("z" . "org-zotxt")
+      :prefix ("z" . "references")
       "i" #'org-zotxt-insert-reference-link
       "u" #'org-zotxt-update-reference-link-at-point
       "o" #'org-zotxt-open-attachment)
 #+END_SRC
 
+And these are some similar bindings for ~org-roam-bibtex~. I probably want this to be /globally/ accessible, really, but I’m not sure where to bind it. Looks like ~SPC-z~ is open, but I also want org-specific functions bound to the same cluster.
+#+BEGIN_SRC elisp
+(map! :after org-roam-bibtex
+      :map org-mode-map
+      :localleader
+      :prefix ("z" . "references")
+      "b" #'ivy-bibtex)
+#+END_SRC
+
+I also want to change ~ivy-bibtex-default-action~, which in the default configuration (~ivy-bibtex-open-any~) simply opens a document. I’d like the option to open my notes instead. This variable should be set to a function that lets me choose an action, like when I click on a ~cite~ link. However, I can’t use /exactly/ the same code, since it uses ~org-ref-cite-hydra~ in ~org-ref-ivy-cite.el~, which in turn calls ~-at-point~ functions, which have no mechanism to pass a key as a parameter.
+
+Here are some settings from the not-yet-merged ~biblio~ module, which I have in my private modules directory. I’m not sure if these settings are correct or even necessary. In particular, I don’t think I’m using ~+biblio-pdf-library-dir~ at all.
 #+BEGIN_SRC elisp
 ;; Should this be ~after!~ something?
 ;; TODO review this section, see which settings you actually need.
-(setq! +biblio-pdf-library-dir (concat org-directory "/biblio/pdfs/")
-       +biblio-default-bibliography-files (directory-files
-                                           (concat org-directory "/biblio/bibs")
-                                           t directory-files-no-dot-files-regexp)
-       +biblio-notes-path (concat org-roam-directory "/refs/"))
+(after! org-ref-bibtex
+  (setq! +biblio-pdf-library-dir (concat org-directory "/biblio/pdfs/")
+         +biblio-default-bibliography-files (directory-files
+                                             (concat org-directory "/biblio/bibs")
+                                             t "\.bib$")
+         +biblio-notes-path (concat org-roam-directory "/refs/")))
 #+END_SRC
 
 We have to ensure that we open pdfs by looking up the bibliography ~file~ field, rather than by looking in a pdf directory.
@@ -444,6 +539,15 @@ Now, in order for ~org-ref-open-notes-at-point~ (via ~orb-edit-notes~) to work p
                   ":NOTER_PAGE:\n"
                   ":END:\n"))))
 #+END_SRC
+** Org-noter
+By default, Noter opens a new frame, although this is rarely the behavior I actually want. Symmetrically, we should keep the frame at the end of the Noter session.
+#+BEGIN_SRC elisp
+(after! org-noter
+  (setq org-noter-always-create-frame nil
+        org-noter-kill-frame-at-session-end nil))
+#+END_SRC
+
+We also want closing the Noter document buffer to quit the Noter session. This seems to actually be a /default/ behavior, since ~q~ is bound to ~org-noter-kill-session~ in ~org-noter-doc-mode~. But in practice this key just closes the doc buffer; it doesn’t remove the notes window as well.
 
 ** Org-journal
 #+BEGIN_SRC elisp
@@ -455,27 +559,22 @@ Now, in order for ~org-ref-open-notes-at-point~ (via ~orb-edit-notes~) to work p
 #+END_SRC
 
 * Documents
-Some pdf viewing preferences: use the ~ewal~ colors, and start in ~midnight-minor-mode~.
+Some pdf viewing preferences: start in ~midnight-minor-mode~, and use theme colors.  I’m treating it not as a ‘pdf dark mode,’ but as a ‘pdf themed mode,’ which is what you really want most of the time.
 #+BEGIN_SRC elisp
 (defun my/set-pdf-view-midnight-colors ()
   "Sets the colors for viewing pdfs in 'dark mode'"
   (interactive)
   (setq pdf-view-midnight-colors
-        `(,(my/theme-color 'fg) .
-          ,(my/theme-color 'bg))))
+        (cons (my/theme-color 'fg)
+              (my/theme-color 'bg))))
 
-;; TODO add a load-theme hook for this
-
-;; Does the framework allow this kind of nesting of these macros?
-(after! pdf
-  (after! ewal-doom-themes
-    ;; This should be a cons (FOREGROUND . BACKGROUND) of colors.
-    (setq pdf-view-midnight-colors
-          `(,(my/ewal-color 'foreground) .
-            ,(my/ewal-color 'background)))))
+;; Set these colors whenever you load a theme
+(add-hook! 'doom-load-theme-hook
+           :append #'my/set-pdf-view-midnight-colors)
 
 ;; Start in midnight mode!
-(add-hook 'pdf-view-mode-hook #'pdf-view-midnight-minor-mode)
+(add-hook! 'pdf-view-mode-hook
+           :append #'pdf-view-midnight-minor-mode)
 #+END_SRC
 
 * Email
@@ -556,40 +655,5 @@ I’d also like to provide some convenience functions for automatically insertin
   "Create or edit and insert in inkscape figure in an Org buffer"
   (interactive)
   (let ((figure-name (my/inkscape-figures)))
-    (insert (concat "[[" (my/figure-dir) figure-name ".svg]]"))))
+    (insert (concat "[[file:" (my/figure-dir) figure-name ".svg]]"))))
 #+END_SRC
-
-* Odds and ends
-A fun little thing you can do in Emacs 27. Function due to an internet stranger, whom I should cite if I ever find them again.
-#+BEGIN_SRC elisp
-(defun screenshot-svg ()
-  "Save a screenshot of the current frame as an SVG image.
-Saves to a temp file and puts the filename in the kill ring."
-  (interactive)
-  (let* ((filename (make-temp-file "Emacs" nil ".svg"))
-         (data (x-export-frames nil 'svg)))
-    (with-temp-file filename
-      (insert data))
-    (kill-new filename)
-    (message filename)))
-#+END_SRC
-
-I’d like my dictionary popups to fill a little more of the screen than they do by default.
-#+BEGIN_SRC elisp
-(set-popup-rule! "^\\*WordNut"
-  ;; :action
-  :height 0.3   ;; fill this much of the screen
-  )
-#+END_SRC
-** Notifications
-#+BEGIN_SRC elisp
-;; alert configurations
-(after! alert
-  (setq-default alert-default-style 'libnotify
-                ;; alerts fade out after 30 seconds
-                alert-fade-time 30))
-
-(add-hook 'after-init-hook 'org-wild-notifier-mode)
-#+END_SRC
-
-#  LocalWords:  config namespacing

@@ -148,6 +148,7 @@
        ;;ocaml             ; an objective camel
        (org +roam
             +journal
+            +present       ; export to beamer, reveal.js,…
             +noter)    ; organize your plain life in plain text
        ;;php               ; perl's insecure younger brother
        ;;plantuml          ; diagrams for confusing people more
