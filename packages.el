@@ -56,11 +56,12 @@
 (package! org-pretty-tags)
 (package! org-wild-notifier)
 (package! org-roam-server)
-(package! fira-code-mode)
+;; (package! fira-code-mode)
 (package! ivy-bibtex)
 (package! zotxt)
 (package! mu4e-alert)
-(package! modus-vivendi-theme)
-(package! modus-operandi-theme)
-;; It seems that poet isn’t Doom-compatible.
-(package! poet-theme)
+
+;; It seems that these themes aren’t Doom-compatible.
+;; (package! modus-vivendi-theme)
+;; (package! modus-operandi-theme)
+;; (package! poet-theme)

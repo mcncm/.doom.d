@@ -1,19 +1,21 @@
 #+TITLE: Literate Doom Emacs configuration
 #+AUTHOR: mcncm
-#+PROPERTY: header-args :emacs-lisp :tangle yes :comments no :cache yes :results silent
+#+PROPERTY: header-args :emacs-lisp :tangle yes :comments no :cache yes    :results silent
 #+STARTUP: org-startup-folded: showall
 * Introduction
-I’ve been migrating from Spacemacs to Doom Emacs, which has made it easier than ever to write a maintainable, human-readable config document. This represents my “first best effort” at translating my previous config.
+I’ve been migrating from [[https://www.spacemacs.org/][Spacemacs]]  to [[https://github.com/hlissner/doom-emacs][Doom Emacs]] , which has made it easier than ever to write a maintainable, human-readable config document. This represents my “first best effort” at translating my previous config.
 ** Conventions
 + “Personal” variables and functions have the prefix ~my/~ as a namespacing convention.
 * Default Doom config preamble
 Use lexical binding /always/; otherwise, ~let~ constructs will not behave intuitively. Note that for this header to work properly in a literate config, we must include the ~:comments no~ attribute in the headers above, and it must come /after/ ~:tangle yes~. You can also set this attribute for each block.
-#+BEGIN_SRC elisp
+
+#+BEGIN_SRC emacs-lisp
 ;;; $DOOMDIR/config.el -*- lexical-binding: t; -*-
 #+END_SRC
 
 This is just the block at the top of the ~config.el~ that ships with Doom Emacs, modified to my current tastes. There’s nothing especially interesting here.
-#+BEGIN_SRC elisp
+
+#+BEGIN_SRC emacs-lisp
 ;; Place your private configuration here! Remember, you do not need to run 'doom
 ;; sync' after modifying this file!
 
@@ -37,13 +39,13 @@ This is just the block at the top of the ~config.el~ that ships with Doom Emacs,
 ;; font string. You generally only need these two:
 ;; (setq doom-font (font-spec :family "monospace" :size 12 :weight 'semi-light)
 ;;       doom-variable-pitch-font (font-spec :family "sans" :size 13))
-(setq my/code-font "Fira Code Retina")
+(setq my/code-family "Fira Code")
 (setq my/code-size 20)
 (setq my/text-font "ETBembo")
 (setq my/text-size 25)
 
-(setq doom-font (font-spec :family my/code-font :size my/code-size)
-      doom-big-font (font-spec :family my/code-font :size 30)
+(setq doom-font (font-spec :family my/code-family :size my/code-size)
+      doom-big-font (font-spec :family my/code-family :size 30)
       doom-variable-pitch-font (font-spec :family my/text-font :size my/text-size :weight 'thin))
 
 
@@ -79,20 +81,23 @@ This is just the block at the top of the ~config.el~ that ships with Doom Emacs,
 I’d like to set some variables that generally make life better.
 
 Here I’m trying to more closely match the [[https://www.spacemacs.org/][Spacemacs]] convention that I like. I'm still not sure what the default “repeat” behavior of the comma key actually /does/. For all I know, I might prefer it. In any case, I should also see if I ought to unmap that key first. Note that this *unmaps* ~SPC-m~.
-#+BEGIN_SRC elisp
+
+#+BEGIN_SRC emacs-lisp
 (setq doom-localleader-key ",")
 #+END_SRC
 
 And here are some miscellaneous settings.  All of these are snagged from [[https://tecosaur.github.io/emacs-config/config.html#better-defaults][tecosaur]], who in turn got them from a much larger list of “better defaults” from [[https://github.com/angrybacon/dotemacs/blob/master/dotemacs.org#use-better-defaults][angrybacon]].
-#+BEGIN_SRC elisp
+
+#+BEGIN_SRC emacs-lisp
 (setq-default
  delete-by-moving-to-trash t)
 
 (setq undo-limit 80000000
       truncate-string-ellipsis "…")
 #+END_SRC
+
 ** Little helper functions
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun my/find-file-in-home ()
   "Search for a file in home directory."
   (interactive)
@@ -107,14 +112,16 @@ And here are some miscellaneous settings.  All of these are snagged from [[https
 #+END_SRC
 
 I want these bound to convenient keys to quickly find files in my home directory and agenda.
-#+BEGIN_SRC elisp
+
+#+BEGIN_SRC emacs-lisp
 (map! :map doom-leader-file-map
       "h" #'my/find-file-in-home
       "a" #'my/find-file-in-agenda)
 #+END_SRC
 
 Here are two little auxiliary functions for retrieving palette colors. I’m not sure if there’s already a (presumably Doom-specific) function that accomplishes this, but if there is I should use it.
-#+BEGIN_SRC elisp
+
+#+BEGIN_SRC emacs-lisp
 (defun my/ewal-color (color)
   "COLOR should be a symbol defined in ewal-base-palette. Options are:
 'comment, 'background, 'foreground, 'cursor, 'black, 'red,
@@ -134,16 +141,19 @@ Here are two little auxiliary functions for retrieving palette colors. I’m not
 #+END_SRC
 ** Behold the dodecahedron!
 This is my Doom banner, or splash screen icon. I’d also like to change it from time to time, but I like this dodecahedron well enough.
-#+BEGIN_SRC elisp
+
+#+BEGIN_SRC emacs-lisp
 (setq +doom-dashboard-banner-dir "~/.doom.d/banner"
-      my/banner-template-file "imperial_encyclopedia.svg"
+      my/banner-template-file "dodecahedron.svg"
       +doom-dashboard-banner-file "banner.svg")
 #+END_SRC
 
 A fun little trick and terrible hack to recolor the banner. Maybe I should try ~async-shell-command~ rather than ~shell-command~? We can even set an override color on a per-theme basis.
-#+BEGIN_SRC elisp
+
+#+BEGIN_SRC emacs-lisp
 ;; TODO I think I'm probably supposed to ~defvar~ these so they're properly
 ;; documented.
+
 (setq my/theme-banner-color-overrides
       '((doom-gruvbox-light . red)
         (poet . yellow))
@@ -170,12 +180,14 @@ A fun little trick and terrible hack to recolor the banner. Maybe I should try ~
 #+END_SRC
 
 Let’s run this when we change themes, so it’s colored correctly.
-#+BEGIN_SRC elisp
-(add-hook 'doom-load-theme-hook #'my/recolor-banner)
+
+#+BEGIN_SRC emacs-lisp
+(add-hook! 'doom-load-theme-hook #'my/recolor-banner)
 #+END_SRC
 ** Odds and ends
 A fun little thing you can do in Emacs 27. Function due to an internet stranger, whom I should cite if I ever find them again.
-#+BEGIN_SRC elisp
+
+#+BEGIN_SRC emacs-lisp
 (defun screenshot-svg ()
   "Save a screenshot of the current frame as an SVG image.
 Saves to a temp file and puts the filename in the kill ring."
@@ -189,14 +201,15 @@ Saves to a temp file and puts the filename in the kill ring."
 #+END_SRC
 
 I’d like my dictionary popups to fill a little more of the screen than they do by default.
-#+BEGIN_SRC elisp
+
+#+BEGIN_SRC emacs-lisp
 (set-popup-rule! "^\\*WordNut"
   ;; :action
   :height 0.3   ;; fill this much of the screen
   )
 #+END_SRC
 *** Notifications
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 ;; alert configurations
 (after! alert
   (setq-default alert-default-style 'libnotify
@@ -205,12 +218,11 @@ I’d like my dictionary popups to fill a little more of the screen than they do
 
 (add-hook 'after-init-hook 'org-wild-notifier-mode)
 #+END_SRC
-
-#  LocalWords:  config namespacing zitieren noter
 * Fonts, faces, and characters
 ** Better color defaults
 Fix some pretty awful ~lsp~ colors. To check: are all these ~after!~ macros expensive? Are they hurting my startup time? Should I be putting them in some specific order?
-#+BEGIN_SRC elisp
+
+#+BEGIN_SRC emacs-lisp
 (after! lsp-modeline
   (after! ewal-doom-themes
     (set-face-attribute 'lsp-modeline-code-actions-face nil
@@ -218,26 +230,28 @@ Fix some pretty awful ~lsp~ colors. To check: are all these ~after!~ macros expe
 #+END_SRC
 
 Coq-related face settings from my old Spacemacs config, which are not exactly correct any more.
-#+BEGIN_SRC elisp
+
+#+BEGIN_SRC emacs-lisp
 ;; Change the color-setting from the version, wrap in 'set-face-attribute' call
 ;; (proof-locked-face :background ,(ewal-get-color 'background 2))
 #+END_SRC
 
 ** Org faces
 Some sensible org theme things. I think I snagged these from [[https://github.com/biblecraft-abe/Spacemacs][Abraham Peters]].
-#+BEGIN_SRC elisp
- (let* ((base-font-color     (face-foreground 'default nil 'default))
-        ;; ~headline~ previously had a ~:foreground ,base-font-color~ in it. But
-        ;; this seems not to give the right color--all headlines come out black.
-        (headline           `(:inherit default :weight bold)))
-   ;; A Doom Emacs macro that provides a simpler syntax for `custom-theme-set-faces`
-   (custom-theme-set-faces!
+
+#+BEGIN_SRC emacs-lisp
+(let* ((base-font-color     (face-foreground 'default nil 'default))
+       ;; ~headline~ previously had a ~:foreground ,base-font-color~ in it. But
+       ;; this seems not to give the right color--all headlines come out black.
+       (headline           `(:inherit default :weight bold)))
+  ;; A Doom Emacs macro that provides a simpler syntax for `custom-theme-set-faces`
+  (custom-theme-set-faces!
     'user
     ;; Why does 0.8 seem to be about right? Well, it’s the same as the ratio
     ;; between my/code-size and my/text-size. That’s probably a hint as to
     ;; what’s going on.
-    `(org-code :family ,my/code-font :height 0.8)
-    `(org-block :family ,my/code-font :height 0.8)
+    `(org-code :family ,my/code-family :height 0.8)
+    `(org-block :family ,my/code-family :height 0.8)
     `(org-level-8 ,@headline)
     `(org-level-7 ,@headline)
     `(org-level-6 ,@headline)
@@ -249,9 +263,21 @@ Some sensible org theme things. I think I snagged these from [[https://github.co
     `(org-document-title ,@headline :height 2.0 :underline nil)))
 #+END_SRC
 
+Block faces: which faces should we use for which source languages?
+Need to set ~org-src-block-faces~!
+
+#+BEGIN_SRC emacs-lisp :tangle no
+(after! org
+    (setq org-src-block-faces
+    '(("python" (:family "Fira Code"))
+      ("jupyter-python" (:family "Fira Code"))
+      ("elisp" (:family "Fira Code")))))
+#+END_SRC
+
 ** Ligatures
 Fira Code is a pretty nice programming font, and I like its ligatures and special characters. But some of them, like rendering ~x~ as a multiplication sign, are a little ugly.
-#+BEGIN_SRC elisp
+
+#+BEGIN_SRC emacs-lisp
 (custom-set-variables '(fira-code-mode-disabled-ligatures '("[]" "#{" "#(" "#[" "#_(" "x")))
 (add-hook 'prog-mode-hook 'fira-code-mode)
 #+END_SRC
@@ -259,13 +285,15 @@ Fira Code is a pretty nice programming font, and I like its ligatures and specia
 * Programming
 ** Rust
 Not necessary if using ~:editor format-all~ (or something like this? I forget what the setting was called), but that seems not to work. In any case, I think I might prefer ~rust-mode~ to ~rustic~. I might consider going back, even within Doom.
-#+BEGIN_SRC elisp
+
+#+BEGIN_SRC emacs-lisp
 (setq rustic-lsp-server 'rust-analyzer
       rustic-format-on-save t)
 #+END_SRC
 
 I want to ensure that my compilation buffers show up on the right-hand side. Check the documentation for ~set-popup-rule!~ to find out about all the keys you can use for this.
-#+BEGIN_SRC elisp
+
+#+BEGIN_SRC emacs-lisp
 (after! popup
   (set-popup-rule! "^\\*rustic"
     :select t    ;; focus the window after it opens
@@ -277,7 +305,8 @@ I want to ensure that my compilation buffers show up on the right-hand side. Che
 #+END_SRC
 
 It is sometimes advised, I think, to abrogate the use of advice. But I thought it would be much nicer to use this approach here than to define an entirely /new/ function and to bind it to some unused key or to override the binding for  ~rustic-cargo-run~. This is a much simpler version of the function ~cargo-comint-run~  appearing in my Spacemacs config.
-#+BEGIN_SRC elisp
+
+#+BEGIN_SRC emacs-lisp
 (defadvice! cargo-run-comint ()
   "After calling `rustic-cargo-run`, enter comint mode and make the buffer editable."
   :after #'rustic-cargo-run
@@ -293,7 +322,8 @@ It is sometimes advised, I think, to abrogate the use of advice. But I thought i
 For some reason, Doom’s Python module is relatively impoverished compared to the Spacemacs Python layer, in that few of the keybindings are evil-ified. I’m trying to make up the difference here.
 
 First, a little helper macro for do-and-switch-to-window functions, which will be helpful for defining these keybindings:
-#+BEGIN_SRC elisp
+
+#+BEGIN_SRC emacs-lisp
 (defmacro my/do-and-switch (action buffer-name)
   "Accepts some ACTION and BUFFER-NAME, and produces a lambda that performs the action and switches to the window presenting the corresponding buffer."
   `(lambda ()
@@ -305,7 +335,8 @@ First, a little helper macro for do-and-switch-to-window functions, which will b
 #+END_SRC
 
 Now let’s use that macro to set some bindings. I should modify this so that ~i~ starts a repl if there is none, and runs ~python-shell-switch-to-shell~ if there is not. Also, these are producing ~Wrong number of arguments~ errors for some reason.
-#+BEGIN_SRC elisp
+
+#+BEGIN_SRC emacs-lisp
 (map! :after python
       :map python-mode-map
       :localleader
@@ -323,7 +354,8 @@ Now let’s use that macro to set some bindings. I should modify this so that ~i
 #+END_SRC
 
 I also want the shell to feel less ‘transient.’
-#+BEGIN_SRC elisp
+
+#+BEGIN_SRC emacs-lisp
 (after! popup
   (set-popup-rule! "^\\*Python"
     :select nil  ;; don’t auto-focus the window
@@ -337,7 +369,8 @@ I also want the shell to feel less ‘transient.’
 #+END_SRC
 ** Company
 Will this make ~company-mode~ work?
-#+BEGIN_SRC elisp
+
+#+BEGIN_SRC emacs-lisp
 (set-company-backend!
   '(c-mode
     haskell-mode
@@ -361,7 +394,8 @@ Will this make ~company-mode~ work?
 A little helper function for completing latex fragments. Some notes:
 + Newlines aren’t working. It might be that you’re supposed to use a "character class" like [:space:] or \s-, but neither of these
 + ~looking-back~ is known to be quite slow. See [[https://emacs.stackexchange.com/a/12744][this answer]].
-#+BEGIN_SRC elisp
+
+#+BEGIN_SRC emacs-lisp
 (defun my/latex-fragment-completion ()
   ;; This regexp will trigger LaTeX compilation whenever following a '$' character by an optional punctuation character and whitespace.
   (when (looking-back "\$[\.,!?-]?\s")
@@ -370,8 +404,9 @@ A little helper function for completing latex fragments. Some notes:
       (org-toggle-latex-fragment))))
 #+END_SRC
 
-All the overridden org-mode variables
-#+BEGIN_SRC elisp
+All the overridden org-mode variables:
+
+#+BEGIN_SRC emacs-lisp
 (after! org
   (setq-default
    org-log-done 'time  ;; when finishing a task, log the time
@@ -381,11 +416,11 @@ All the overridden org-mode variables
    org-latex-create-formula-image-program 'imagemagick)
   (setq org-format-latex-options (plist-put org-format-latex-options :scale 2.0))
   ;; Specify the extra latex packages we want to use, and include them.
-  (setq org-latex-packages-extra '("tikz" "tikz-cd" "physics"))
-  ;; This assumes that there was nothing in this variable to begin with!
-  (setq org-latex-packages-alist
-        (mapcar (lambda (package) `("" ,package t))
-              org-latex-packages-extra))
+  (setq org-latex-packages-extra '("tikz" "tikz-cd" "physics")
+        ;; This assumes that there was nothing in this variable to begin with!
+        org-latex-packages-alist (mapcar (lambda (package) `("" ,package t))
+                                         org-latex-packages-extra))
+
   ;; This will render the bullets more correctly!
   (set-face-attribute 'org-superstar-header-bullet nil :family "Fira Code")
   ;; If this doesn’t render correctly: it’s a beaker
@@ -419,46 +454,42 @@ All the overridden org-mode variables
              (org-pretty-tags-mode)
              (add-hook 'post-self-insert-hook #'my/latex-fragment-completion 'append 'local)))
 #+END_SRC
+** Notebook emulation
+I want to be able to use Org for literate programming in a variety of scripting languages. In particular, I’d like to be able to match the functionality of Jupyter notebooks without dealing with its json format, clunky browser interface, and so on.
 
-*** Org-roam
-#+BEGIN_SRC elisp
-;; org-roam configurations
-(after! org-roam
-  (setq-default org-roam-directory (concat org-directory "/roam"))
-  (after! deft
-    (setq-default deft-directory org-roam-directory)))
+First, we might like to disable ~jupyter-repl-interaction-mode~ in source block editor buffers, thereby unbinding ~C-c C-c~ from evaluation. This conflicts with the source-editing buffer commit command. This could be an issue with Doom’s ~+jupyter~ option.
 
-(add-hook 'org-roam-mode-hook
-          '(lambda ()
-             ;; This shouldn't be necessary... Is it?
-             (org-mode)
-             ;; Do I want this in all org buffers?
-             (org-zotxt-mode)))
+Unfortunately, this does not quite work. It horribly messes up editing of SRC blocks. If you try to edit them in the org buffer, it blocks, and must be edited in a background blah-mode buffer, but ~C-c C-c~ does not actually commit the changes in the org-edit buffer. Note that this is only true once a jupyter session has been started with jupyter-run-repl. You can still exit with ~C-c '~.
+
+#+BEGIN_SRC emacs-lisp
+(map! :after org
+      :map org-src-mode-map
+      :localleader
+      "'" #'org-edit-src-exit)
 #+END_SRC
 
-I’m also using ~org-roam-server~ to visualize the org graph. So far, these settings are the defaults from the [[https://github.com/org-roam/org-roam-server#Installation][installation instructions]], except that I’ve incremented to port number to something less common, and removed the ~:ensure~ attribute, which Doom Emacs discourages.
+We already have ~Enter~ mapped to execution of a single source block, but it would be nice to map a few more functions.
 
-#+BEGIN_SRC elisp
-(use-package! org-roam-server
-  :config
-  (setq org-roam-server-host "127.0.0.1"
-        org-roam-server-port 8081
-        org-roam-server-authenticate nil
-        org-roam-server-export-inline-images t
-        org-roam-server-serve-files nil
-        org-roam-server-served-file-extensions '("pdf" "mp4" "ogv")
-        org-roam-server-network-poll t
-        org-roam-server-network-arrows nil
-        org-roam-server-network-label-truncate t
-        org-roam-server-network-label-truncate-length 60
-        org-roam-server-network-label-wrap-length 20))
+#+BEGIN_SRC emacs-lisp
+(map! :after org
+      :map org-mode-map
+      :localleader
+      :prefix ("j" . "jupyter")
+      "R" #'jupyter-run-repl
+      "s" #'jupyter-org-execute-subtree
+      "p" #'jupyter-org-execute-to-point
+      "n" #'jupyter-org-execute-and-next-block
+      "i" #'jupyter-org-insert-src-block
+      "g" #'jupyter-org-jump-to-block
+      "I" #'jupyter-repl-interrupt-kernel
+      "C" #'jupyter-org-clear-all-results)
 #+END_SRC
-
 ** Citation management
 This is a great big mess. You really need to figure it out at some point.
 
 Here are some keybindings for common things you might want to do with ~org-zotxt~. However, note that this is deprecated now that I’m using ~org-roam-bibtex~. The ~z~ originally stood for ~zotxt~, but it now makes sense to broaden the mnemonic to /zitieren/.
-#+BEGIN_SRC elisp
+
+#+BEGIN_SRC emacs-lisp
 (map! :after org
       :map org-mode-map
       :localleader
@@ -469,7 +500,7 @@ Here are some keybindings for common things you might want to do with ~org-zotxt
 #+END_SRC
 
 And these are some similar bindings for ~org-roam-bibtex~. I probably want this to be /globally/ accessible, really, but I’m not sure where to bind it. Looks like ~SPC-z~ is open, but I also want org-specific functions bound to the same cluster.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (map! :after org-roam-bibtex
       :map org-mode-map
       :localleader
@@ -480,7 +511,8 @@ And these are some similar bindings for ~org-roam-bibtex~. I probably want this 
 I also want to change ~ivy-bibtex-default-action~, which in the default configuration (~ivy-bibtex-open-any~) simply opens a document. I’d like the option to open my notes instead. This variable should be set to a function that lets me choose an action, like when I click on a ~cite~ link. However, I can’t use /exactly/ the same code, since it uses ~org-ref-cite-hydra~ in ~org-ref-ivy-cite.el~, which in turn calls ~-at-point~ functions, which have no mechanism to pass a key as a parameter.
 
 Here are some settings from the not-yet-merged ~biblio~ module, which I have in my private modules directory. I’m not sure if these settings are correct or even necessary. In particular, I don’t think I’m using ~+biblio-pdf-library-dir~ at all.
-#+BEGIN_SRC elisp
+
+#+BEGIN_SRC emacs-lisp
 ;; Should this be ~after!~ something?
 ;; TODO review this section, see which settings you actually need.
 (after! org-ref-bibtex
@@ -492,14 +524,15 @@ Here are some settings from the not-yet-merged ~biblio~ module, which I have in 
 #+END_SRC
 
 We have to ensure that we open pdfs by looking up the bibliography ~file~ field, rather than by looking in a pdf directory.
-#+BEGIN_SRC elisp
+
+#+BEGIN_SRC emacs-lisp
 (after! org-roam-bibtex
   (setq! org-ref-get-pdf-filename-function 'org-ref-get-pdf-filename-helm-bibtex)
   (setq! orb-persp-project `("notes" . ,+biblio-notes-path)))
 #+END_SRC
 
 Now, in order for ~org-ref-open-notes-at-point~ (via ~orb-edit-notes~) to work properly, I need in particular to set some ~orb-templates~ that will put the notes in the right subdirectory and so forth. To get started, I’ve *shamelessly* copied the templates of the illustrious [[https://github.com/zaeph/.emacs.d/blob/0f4bf9a500ef6397b93c41cb51602bea9ab9a4c3/init.el][Leo Vivier]], tweaking them only a little to my tastes.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defvar my/orb-header
           (concat
            "#+title: ${title}\n"
@@ -539,9 +572,44 @@ Now, in order for ~org-ref-open-notes-at-point~ (via ~orb-edit-notes~) to work p
                   ":NOTER_PAGE:\n"
                   ":END:\n"))))
 #+END_SRC
+** Org-roam
+#+BEGIN_SRC emacs-lisp
+;; org-roam configurations
+(after! org-roam
+  (setq-default org-roam-directory (concat org-directory "/roam"))
+  (after! deft
+    (setq-default deft-directory org-roam-directory)))
+
+(add-hook 'org-roam-mode-hook
+          '(lambda ()
+             ;; This shouldn't be necessary... Is it?
+             (org-mode)
+             ;; Do I want this in all org buffers?
+             (org-zotxt-mode)))
+#+END_SRC
+
+I’m also using ~org-roam-server~ to visualize the org graph. So far, these settings are the defaults from the [[https://github.com/org-roam/org-roam-server#Installation][installation instructions]], except that I’ve incremented to port number to something less common, and removed the ~:ensure~ attribute, which Doom Emacs discourages.
+
+#+BEGIN_SRC emacs-lisp
+(use-package! org-roam-server
+  :config
+  (setq org-roam-server-host "127.0.0.1"
+        org-roam-server-port 8081
+        org-roam-server-authenticate nil
+        org-roam-server-export-inline-images t
+        org-roam-server-serve-files nil
+        org-roam-server-served-file-extensions '("pdf" "mp4" "ogv")
+        org-roam-server-network-poll t
+        org-roam-server-network-arrows nil
+        org-roam-server-network-label-truncate t
+        org-roam-server-network-label-truncate-length 60
+        org-roam-server-network-label-wrap-length 20))
+#+END_SRC
+
 ** Org-noter
 By default, Noter opens a new frame, although this is rarely the behavior I actually want. Symmetrically, we should keep the frame at the end of the Noter session.
-#+BEGIN_SRC elisp
+
+#+BEGIN_SRC emacs-lisp
 (after! org-noter
   (setq org-noter-always-create-frame nil
         org-noter-kill-frame-at-session-end nil))
@@ -550,17 +618,86 @@ By default, Noter opens a new frame, although this is rarely the behavior I actu
 We also want closing the Noter document buffer to quit the Noter session. This seems to actually be a /default/ behavior, since ~q~ is bound to ~org-noter-kill-session~ in ~org-noter-doc-mode~. But in practice this key just closes the doc buffer; it doesn’t remove the notes window as well.
 
 ** Org-journal
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 ;; org-journal configurations
 (after! org-journal
   (setq-default org-journal-dir (concat org-directory "/journal")
                 org-journal-encrypt-journal t
                 org-journal-file-type 'weekly))
 #+END_SRC
+** Symbols
+See, as usual, [[https://tecosaur.github.io/emacs-config/config.html#symbols][tecosaur’s config]] for lots of good hints. I’ve shamelessly snagged these as the basis for my custom ligatures. All of tecosaur’s are still in here, but I think I’ll prune a lot of them.
+
+All right, this is almost working. The major problem that remains is that the Emacs Lisp symbol renders as what appears to be the TOR onion logo.
+
+#+BEGIN_SRC emacs-lisp
+(after! org
+  (appendq! +ligatures-extra-symbols
+            `(:checkbox      "☐"
+              :pending       "◼"
+              :checkedbox    "☑"
+              :list_property "∷"
+              :results       "🠶"
+              :property      "☸"
+              :properties    "⚙"
+              :end           "∎"
+              :options       "⌥"
+              :title         "𝙏"
+              :subtitle      "𝙩"
+              :author        "𝘼"
+              :date          "𝘿"
+              :latex_header  "⇥"
+              :latex_class   "🄲"
+              :beamer_header "↠"
+              :jupyter_py    ""
+              :emacs_lisp    ""
+              :begin_quote   "❮"
+              :end_quote     "❯"
+              :begin_export  "⯮"
+              :end_export    "⯬"
+              :priority_a   ,(propertize "⚑" 'face 'all-the-icons-red)
+              :priority_b   ,(propertize "⬆" 'face 'all-the-icons-orange)
+              :priority_c   ,(propertize "■" 'face 'all-the-icons-yellow)
+              :priority_d   ,(propertize "⬇" 'face 'all-the-icons-green)
+              :priority_e   ,(propertize "❓" 'face 'all-the-icons-blue)
+              :em_dash       "—"
+              :en_dash       "–"))
+  (set-ligatures! 'org-mode
+    :merge t
+    :checkbox      "[ ]"
+    :pending       "[-]"
+    :checkedbox    "[X]"
+    :list_property "::"
+    :results       "#+RESULTS:"
+    :property      "#+PROPERTY:"
+    :property      ":PROPERTIES:"
+    :end           ":END:"
+    :options       "#+OPTIONS:"
+    :title         "#+TITLE:"
+    :subtitle      "#+SUBTITLE:"
+    :author        "#+AUTHOR:"
+    :date          "#+DATE:"
+    :latex_class   "#+LATEX_CLASS:"
+    :latex_header  "#+LATEX_HEADER:"
+    :beamer_header "#+BEAMER_HEADER:"
+    :jupyter_py    "jupyter-python"
+    :emacs_lisp    "emacs-lisp"
+    :begin_quote   "#+BEGIN_QUOTE"
+    :end_quote     "#+END_QUOTE"
+    :begin_export  "#+BEGIN_EXPORT"
+    :end_export    "#+END_EXPORT"
+    :priority_a    "[#A]"
+    :priority_b    "[#B]"
+    :priority_c    "[#C]"
+    :priority_d    "[#D]"
+    :priority_e    "[#E]"
+    :em_dash       "---"
+    :en_dash       "--"))
+#+END_SRC
 
 * Documents
 Some pdf viewing preferences: start in ~midnight-minor-mode~, and use theme colors.  I’m treating it not as a ‘pdf dark mode,’ but as a ‘pdf themed mode,’ which is what you really want most of the time.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun my/set-pdf-view-midnight-colors ()
   "Sets the colors for viewing pdfs in 'dark mode'"
   (interactive)
@@ -579,13 +716,15 @@ Some pdf viewing preferences: start in ~midnight-minor-mode~, and use theme colo
 
 * Email
 Here are the public parts of my email configuration. First, we’ll import the bits that I want to keep private.
-#+BEGIN_SRC elisp
+
+#+BEGIN_SRC emacs-lisp
 (after! mu4e
   (load! "./mu4e-config.el"))
 #+END_SRC
 
 These settings specify how to retrieve mail.
-#+BEGIN_SRC elisp
+
+#+BEGIN_SRC emacs-lisp
 (setq
  +mu4e-backend 'offlineimap
  mu4e-get-mail-command "offlineimap"
@@ -596,7 +735,8 @@ These settings specify how to retrieve mail.
 #+END_SRC
 
 And these are just setting up usual text-viewing minor modes. I wonder if I should fold these into ~text-mode~, since they’re redundant with some of the ~org-mode~ minor modes.
-#+BEGIN_SRC elisp
+
+#+BEGIN_SRC emacs-lisp
 ;; TODO are line breaks still not handled correctly?
 (add-hook 'mu4e-view-mode-hook 'olivetti-mode)
 (add-hook 'mu4e-compose-mode-hook
@@ -612,7 +752,7 @@ And these are just setting up usual text-viewing minor modes. I wonder if I shou
 * Technical drawing
 I’d like to be able to run a single command and add or update an ~.svg~ in-place. Here are some little commands to do this, inspired by [[https://castel.dev/post/lecture-notes-2/][Gilles Castel]], whose scripts I’m shamelessly using.
 
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun my/figure-dir ()
   "Return the directory where figures are saved"
   (concat default-directory "figures/"))
@@ -650,10 +790,12 @@ I’d like to be able to run a single command and add or update an ~.svg~ in-pla
 #+END_SRC
 
 I’d also like to provide some convenience functions for automatically inserting these in various text modes. This is a work in progress.
-#+BEGIN_SRC elisp
+
+#+BEGIN_SRC emacs-lisp
 (defun my/inkscape-figures-insert ()
   "Create or edit and insert in inkscape figure in an Org buffer"
   (interactive)
   (let ((figure-name (my/inkscape-figures)))
     (insert (concat "[[file:" (my/figure-dir) figure-name ".svg]]"))))
 #+END_SRC
+#  LocalWords:  config namespacing zitieren noter
