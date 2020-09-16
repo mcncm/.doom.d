@@ -1,6 +1,6 @@
 #+TITLE: Literate Doom Emacs configuration
 #+AUTHOR: mcncm
-#+PROPERTY: header-args :emacs-lisp :tangle yes :comments no :cache yes    :results silent
+#+PROPERTY: header-args :emacs-lisp :tangle yes :comments no :cache yes :results silent
 #+STARTUP: org-startup-folded: showall
 * Introduction
 I’ve been migrating from [[https://www.spacemacs.org/][Spacemacs]]  to [[https://github.com/hlissner/doom-emacs][Doom Emacs]] , which has made it easier than ever to write a maintainable, human-readable config document. This represents my “first best effort” at translating my previous config.
@@ -76,6 +76,7 @@ This is just the block at the top of the ~config.el~ that ships with Doom Emacs,
 ;; You can also try 'gd' (or 'C-c c d') to jump to their definition and see how
 ;; they are implemented.
 #+END_SRC
+
 * Generalities
 ** Some better defaults
 I’d like to set some variables that generally make life better.
@@ -94,6 +95,53 @@ And here are some miscellaneous settings.  All of these are snagged from [[https
 
 (setq undo-limit 80000000
       truncate-string-ellipsis "…")
+#+END_SRC
+
+I’d also like to add this so tramp will work properly on my NixOS server.
+#+BEGIN_SRC emacs-lisp
+(after! tramp
+  (add-to-list 'tramp-remote-path "/run/current-system/sw/bin"    ))
+#+END_SRC
+
+** “Verbal” bindings and tidbits
+#+BEGIN_SRC emacs-lisp
+(use-package! google-translate
+  :config
+  (setq google-translate-default-target-language "English"))
+#+END_SRC
+
+There are a few functions I’d really like bound to keyboard shortcuts that aren’t by default. ~v~ is unused for now, so I’ll take advantage of it, particularly for /verbal/ functions.
+
+#+BEGIN_SRC emacs-lisp
+(map!
+ :leader
+ :prefix ("v" . "+words")
+ (:after spell-fu
+  "a" #'spell-fu-word-add
+  "r" #'spell-fu-word-remove)
+ (:after google-translate
+  (:prefix-map ("t" . "translate")
+  "t" #'google-translate-at-point
+  "b" #'google-translate-buffer
+  "q" #'google-translate-query-translate)))
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+(after! (popup google-translate)
+  (set-popup-rule! "^\\*Google Translate"
+    ;; :action
+    :height 0.3   ;; fill this much of the screen
+    ))
+#+END_SRC
+
+I’d also like my dictionary popups to fill a little more of the screen than they do by default.
+
+#+BEGIN_SRC emacs-lisp
+(after! popup
+  (set-popup-rule! "^\\*WordNut"
+    ;; :action
+    :height 0.3   ;; fill this much of the screen
+    ))
 #+END_SRC
 
 ** Little helper functions
@@ -139,6 +187,7 @@ Here are two little auxiliary functions for retrieving palette colors. I’m not
       nil)                          ;; …if it exists.
     ))
 #+END_SRC
+
 ** Behold the dodecahedron!
 This is my Doom banner, or splash screen icon. I’d also like to change it from time to time, but I like this dodecahedron well enough.
 
@@ -184,6 +233,7 @@ Let’s run this when we change themes, so it’s colored correctly.
 #+BEGIN_SRC emacs-lisp
 (add-hook! 'doom-load-theme-hook #'my/recolor-banner)
 #+END_SRC
+
 ** Odds and ends
 A fun little thing you can do in Emacs 27. Function due to an internet stranger, whom I should cite if I ever find them again.
 
@@ -200,14 +250,6 @@ Saves to a temp file and puts the filename in the kill ring."
     (message filename)))
 #+END_SRC
 
-I’d like my dictionary popups to fill a little more of the screen than they do by default.
-
-#+BEGIN_SRC emacs-lisp
-(set-popup-rule! "^\\*WordNut"
-  ;; :action
-  :height 0.3   ;; fill this much of the screen
-  )
-#+END_SRC
 *** Notifications
 #+BEGIN_SRC emacs-lisp
 ;; alert configurations
@@ -218,6 +260,7 @@ I’d like my dictionary popups to fill a little more of the screen than they do
 
 (add-hook 'after-init-hook 'org-wild-notifier-mode)
 #+END_SRC
+
 * Fonts, faces, and characters
 ** Better color defaults
 Fix some pretty awful ~lsp~ colors. To check: are all these ~after!~ macros expensive? Are they hurting my startup time? Should I be putting them in some specific order?
@@ -277,7 +320,9 @@ Need to set ~org-src-block-faces~!
 ** Ligatures
 Fira Code is a pretty nice programming font, and I like its ligatures and special characters. But some of them, like rendering ~x~ as a multiplication sign, are a little ugly.
 
-#+BEGIN_SRC emacs-lisp
+This block is currently excluded (~:tangle no~) because ~fira-code-mode~ seems to not play well with the ~ligatures~ module. I’m not sure how to successfully get Fira ligatures as well as all the others.
+
+#+BEGIN_SRC emacs-lisp :tangle no
 (custom-set-variables '(fira-code-mode-disabled-ligatures '("[]" "#{" "#(" "#[" "#_(" "x")))
 (add-hook 'prog-mode-hook 'fira-code-mode)
 #+END_SRC
@@ -341,15 +386,25 @@ Now let’s use that macro to set some bindings. I should modify this so that ~i
       :map python-mode-map
       :localleader
       :prefix ("s" . "shell")
+      :desc "Run IPython REPL"
       "i" #'+python/open-ipython-repl
+      :desc "Run IPython REPL and switch"
       "I" (my/do-and-switch +python/open-ipython-repl "*Python*")
+      :desc "Send statement"
       "s" #'python-shell-send-statement
+      :desc "Send statement and switch"
       "S" (my/do-and-switch python-shell-send-statement "*Python")
+      :desc "Send region"
       "s" #'python-shell-send-region
+      :desc "Send region and switch"
       "S" (my/do-and-switch python-shell-send-region "*Python")
+      :desc "Send buffer"
       "b" #'python-shell-send-buffer
+      :desc "Send buffer and switch"
       "B" (my/do-and-switch python-shell-send-buffer "*Python*")
+      :desc "Send file"
       "f" #'python-shell-send-file
+      :desc "Send file and switch"
       "F" (my/do-and-switch python-shell-send-file "*Python*"))
 #+END_SRC
 
@@ -367,6 +422,23 @@ I also want the shell to feel less ‘transient.’
   )
 )
 #+END_SRC
+
+Finally, I want to get rid of the default ligatures from the ~ligatures~ module. If there’s a cleaner way to accomplish this (say, with a single built-in function, or by setting a ~ligatures~ module variable), I’d like to know.
+
+This /doesn’t quite work/ right now. In particular, the /first/ python buffer will have all the undesired default ligatures, while subsequent ones will only have the one(s) specified here.
+
+#+BEGIN_SRC emacs-lisp
+(after! python
+  ;; the set-ligatures! macro doesn’t do what I expect
+  ;; => turns out it doesn’t unset if the key is the first one
+  ;;    in the list. For this silly reason, we’ll insert this
+  ;;    Ruby ligature in the first place.
+  (set-ligatures! 'ruby-mode :lambda "lambda")
+  (set-ligatures! 'python-mode nil) ;; remove the defaults
+  (set-ligatures! 'python-mode  ;; and insert new ones
+    :lambda "lambda"))
+#+END_SRC
+
 ** Company
 Will this make ~company-mode~ work?
 
@@ -392,7 +464,7 @@ Will this make ~company-mode~ work?
 * Org-mode
 ** Main Org-mode settings
 A little helper function for completing latex fragments. Some notes:
-+ Newlines aren’t working. It might be that you’re supposed to use a "character class" like [:space:] or \s-, but neither of these
++ Newlines aren’t working. It might be that you’re supposed to use a "character class" like ~[:space:]~ or ~\s-~, but neither of these
 + ~looking-back~ is known to be quite slow. See [[https://emacs.stackexchange.com/a/12744][this answer]].
 
 #+BEGIN_SRC emacs-lisp
@@ -429,6 +501,8 @@ All the overridden org-mode variables:
   (push '("physical" . "") org-pretty-tags-surrogate-strings)
   ;; If tihs doesn’t render correctly: it’s a sticky note
   (push '("noter" . "") org-pretty-tags-surrogate-strings)
+  ;; If tihs doesn’t render correctly: it’s a pencil
+  (push '("noter" . "") org-pretty-tags-surrogate-strings)
 
   ;; Overwrites the app that should be used to open pdfs from Emacs. This was
   ;; originally set to ~default~ in org.el, which uses the "system default pdf
@@ -475,15 +549,22 @@ We already have ~Enter~ mapped to execution of a single source block, but it wou
       :map org-mode-map
       :localleader
       :prefix ("j" . "jupyter")
-      "R" #'jupyter-run-repl
-      "s" #'jupyter-org-execute-subtree
-      "p" #'jupyter-org-execute-to-point
-      "n" #'jupyter-org-execute-and-next-block
-      "i" #'jupyter-org-insert-src-block
-      "g" #'jupyter-org-jump-to-block
-      "I" #'jupyter-repl-interrupt-kernel
-      "C" #'jupyter-org-clear-all-results)
+      :desc "Clear results" "C" #'jupyter-org-clear-all-results
+      :desc "Interrupt kernel" "I" #'jupyter-org-interrupt-kernel
+      :desc "Run REPL" "R" #'jupyter-run-repl
+      :desc "Execute subtree" "S" #'jupyter-org-execute-subtree
+      :desc "Goto error" "e" #'jupyter-org-goto-error
+      :desc "Goto block" "g" #'jupyter-org-jump-to-block
+      :desc "Insert block" "i" #'jupyter-org-insert-src-block
+      :desc "Merge blocks" "m" #'jupyter-org-merge-blocks
+      :desc "Execute and advance" "n" #'jupyter-org-execute-and-next-block
+      :desc "Execute to point" "p" #'jupyter-org-execute-to-point
+      :desc "Split block" "s" #'jupyter-org-split-src-block)
 #+END_SRC
+
+I’d also like to have a capture template for making ~jupyter-python~ notebooks. That can happen another time.
+
+I’d also like to have a function that selects a subtree via ~ivy~ (doing something like ~org-goto~) and evaluates it (doing something like ~jupyter-execute-subtree~), all in-place.
 ** Citation management
 This is a great big mess. You really need to figure it out at some point.
 
@@ -500,6 +581,7 @@ Here are some keybindings for common things you might want to do with ~org-zotxt
 #+END_SRC
 
 And these are some similar bindings for ~org-roam-bibtex~. I probably want this to be /globally/ accessible, really, but I’m not sure where to bind it. Looks like ~SPC-z~ is open, but I also want org-specific functions bound to the same cluster.
+
 #+BEGIN_SRC emacs-lisp
 (map! :after org-roam-bibtex
       :map org-mode-map
@@ -621,14 +703,17 @@ We also want closing the Noter document buffer to quit the Noter session. This s
 #+BEGIN_SRC emacs-lisp
 ;; org-journal configurations
 (after! org-journal
-  (setq-default org-journal-dir (concat org-directory "/journal")
-                org-journal-encrypt-journal t
-                org-journal-file-type 'weekly))
+  (setq-default
+   org-journal-dir (concat org-directory "/journal")
+   org-journal-encrypt-journal t
+   org-journal-file-type 'weekly
+   org-extend-today-until 4      ;; burn the midnight oil
+   ))
 #+END_SRC
 ** Symbols
 See, as usual, [[https://tecosaur.github.io/emacs-config/config.html#symbols][tecosaur’s config]] for lots of good hints. I’ve shamelessly snagged these as the basis for my custom ligatures. All of tecosaur’s are still in here, but I think I’ll prune a lot of them.
 
-All right, this is almost working. The major problem that remains is that the Emacs Lisp symbol renders as what appears to be the TOR onion logo.
+All right, this is almost working. The major problem that remains is that the Emacs Lisp symbol renders as what appears to be the TOR onion logo. Also, if I add the ~+fira~ option to the ~ligatures~ module, colons start rendering as some kind of unusual letter /k/, and other undesired things. I’m not sure how to get both Fira ligatures and the others working together.
 
 #+BEGIN_SRC emacs-lisp
 (after! org
@@ -638,28 +723,17 @@ All right, this is almost working. The major problem that remains is that the Em
               :checkedbox    "☑"
               :list_property "∷"
               :results       "🠶"
-              :property      "☸"
-              :properties    "⚙"
               :end           "∎"
               :options       "⌥"
-              :title         "𝙏"
-              :subtitle      "𝙩"
-              :author        "𝘼"
-              :date          "𝘿"
               :latex_header  "⇥"
               :latex_class   "🄲"
               :beamer_header "↠"
               :jupyter_py    ""
               :emacs_lisp    ""
-              :begin_quote   "❮"
-              :end_quote     "❯"
+              ;; :begin_quote   "❮"
+              ;; :end_quote     "❯"
               :begin_export  "⯮"
               :end_export    "⯬"
-              :priority_a   ,(propertize "⚑" 'face 'all-the-icons-red)
-              :priority_b   ,(propertize "⬆" 'face 'all-the-icons-orange)
-              :priority_c   ,(propertize "■" 'face 'all-the-icons-yellow)
-              :priority_d   ,(propertize "⬇" 'face 'all-the-icons-green)
-              :priority_e   ,(propertize "❓" 'face 'all-the-icons-blue)
               :em_dash       "—"
               :en_dash       "–"))
   (set-ligatures! 'org-mode
@@ -669,14 +743,8 @@ All right, this is almost working. The major problem that remains is that the Em
     :checkedbox    "[X]"
     :list_property "::"
     :results       "#+RESULTS:"
-    :property      "#+PROPERTY:"
-    :property      ":PROPERTIES:"
     :end           ":END:"
     :options       "#+OPTIONS:"
-    :title         "#+TITLE:"
-    :subtitle      "#+SUBTITLE:"
-    :author        "#+AUTHOR:"
-    :date          "#+DATE:"
     :latex_class   "#+LATEX_CLASS:"
     :latex_header  "#+LATEX_HEADER:"
     :beamer_header "#+BEAMER_HEADER:"
@@ -686,13 +754,38 @@ All right, this is almost working. The major problem that remains is that the Em
     :end_quote     "#+END_QUOTE"
     :begin_export  "#+BEGIN_EXPORT"
     :end_export    "#+END_EXPORT"
-    :priority_a    "[#A]"
-    :priority_b    "[#B]"
-    :priority_c    "[#C]"
-    :priority_d    "[#D]"
-    :priority_e    "[#E]"
     :em_dash       "---"
     :en_dash       "--"))
+#+END_SRC
+* LaTeX
+Maybe this and ~org-mode~ should be refiled under [[*Documents][Documents]]; I’m not sure. It has its own top-level header for now.
+
+Let’s first set some defaults:
+#+BEGIN_SRC emacs-lisp
+(after! tex-mode
+  (setq +latex-viewers '(pdf-tools)))
+#+END_SRC
+
+Doom doesn’t supply a lot of evil bindings for TeX by default, so let’s do that, too.
+
+#+BEGIN_SRC emacs-lisp
+(map! :after tex-mode
+      :map TeX-mode-map
+      :localleader
+      "c" #'TeX-command-run-all  ;; compile and view the document
+)
+#+END_SRC
+
+Finally, pdf popups (which -- I think -- will mostly come from tex documents) should appear on the right-hand side.
+#+BEGIN_SRC emacs-lisp
+(after! popup
+  (set-popup-rule! "^.*.pdf"
+    :select nil    ;; don’t focus the window after it opens
+    ;; :action
+    :side 'right ;; on the rhs of the screen
+    :width 0.5   ;; and fill 50% of it.
+  )
+)
 #+END_SRC
 
 * Documents
@@ -712,6 +805,34 @@ Some pdf viewing preferences: start in ~midnight-minor-mode~, and use theme colo
 ;; Start in midnight mode!
 (add-hook! 'pdf-view-mode-hook
            :append #'pdf-view-midnight-minor-mode)
+#+END_SRC
+
+We can also read books, and integrate them into our ~org-roam-bibtex~ / ~org-noter~ universe. Let’s set up ~nov.el~:
+
+#+BEGIN_SRC emacs-lisp
+(use-package! nov
+  :hook (nov-mode . variable-pitch-mode)
+  :mode ("\\.\\(epub\\|mobi\\)\\'" . nov-mode))
+#+END_SRC
+
+We’re ignoring this function for now, which I’ve yanked from zaeph’s config. There it is bound to ~M-i~. I should also figure out if ~insert-precise-note~ is inserting at mouse in pdfs.
+
+#+BEGIN_SRC emacs-lisp :tangle no
+;; This function has been yanked from zaeph’s config.
+;; Zaeph just has it bound to "M-i"
+(defun my/org-noter-insert-precise-note-dwim (force-mouse)
+    "Insert note associated with a specific location.
+
+If in nov-mode, use point rather than the mouse to target the
+position."
+    (interactive "P")
+    (if (and (derived-mode-p 'nov-mode)
+             (not force-mouse))
+        (let ((pos (if (region-active-p)
+                       (min (region-beginning) (point))
+                     (point))))
+          (org-noter-insert-note pos))
+      (org-noter-insert-precise-note)))
 #+END_SRC
 
 * Email

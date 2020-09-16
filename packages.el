@@ -56,10 +56,13 @@
 (package! org-pretty-tags)
 (package! org-wild-notifier)
 (package! org-roam-server)
-;; (package! fira-code-mode)
+;; (package! fira-code-mode)  ;; seems to not play nicely
+                              ;; with ligatures module
 (package! ivy-bibtex)
 (package! zotxt)
 (package! mu4e-alert)
+(package! nov)
+(package! google-translate)
 
 ;; It seems that these themes aren’t Doom-compatible.
 ;; (package! modus-vivendi-theme)
