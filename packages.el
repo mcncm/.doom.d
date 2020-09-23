@@ -56,6 +56,7 @@
 (package! org-pretty-tags)
 (package! org-wild-notifier)
 (package! org-roam-server)
+(package! anki-editor)
 ;; (package! fira-code-mode)  ;; seems to not play nicely
                               ;; with ligatures module
 (package! ivy-bibtex)
@@ -68,3 +69,12 @@
 ;; (package! modus-vivendi-theme)
 ;; (package! modus-operandi-theme)
 ;; (package! poet-theme)
+
+;; snippets: use the default snippets instead of the D
+;; (package! doom-snippets :ignore t)
+;; (package! yasnippet-snippets)
+
+;; lsp-julia must be manually installed; is not included with the Julia
+;; +lsp flag
+(package! lsp-julia
+  :recipe (:host github :repo "non-jedi/lsp-julia"))

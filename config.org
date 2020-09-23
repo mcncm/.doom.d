@@ -3,7 +3,7 @@
 #+PROPERTY: header-args :emacs-lisp :tangle yes :comments no :cache yes :results silent
 #+STARTUP: org-startup-folded: showall
 * Introduction
-I’ve been migrating from [[https://www.spacemacs.org/][Spacemacs]]  to [[https://github.com/hlissner/doom-emacs][Doom Emacs]] , which has made it easier than ever to write a maintainable, human-readable config document. This represents my “first best effort” at translating my previous config.
+I’ve been migrating from [[https://www.spacemacs.org/][Spacemacs]] to [[https://github.com/hlissner/doom-emacs][Doom Emacs]], which has made it easier than ever to write a maintainable, human-readable config document. This represents my “first best effort” at translating my previous config.
 ** Conventions
 + “Personal” variables and functions have the prefix ~my/~ as a namespacing convention.
 * Default Doom config preamble
@@ -41,6 +41,8 @@ This is just the block at the top of the ~config.el~ that ships with Doom Emacs,
 ;;       doom-variable-pitch-font (font-spec :family "sans" :size 13))
 (setq my/code-family "Fira Code")
 (setq my/code-size 20)
+;; (setq my/text-font "Computer Modern")
+;; (setq my/text-font "Iosevka")
 (setq my/text-font "ETBembo")
 (setq my/text-size 25)
 
@@ -100,7 +102,15 @@ And here are some miscellaneous settings.  All of these are snagged from [[https
 I’d also like to add this so tramp will work properly on my NixOS server.
 #+BEGIN_SRC emacs-lisp
 (after! tramp
-  (add-to-list 'tramp-remote-path "/run/current-system/sw/bin"    ))
+  (add-to-list 'tramp-remote-path "/run/current-system/sw/bin"))
+#+END_SRC
+** Some extra bindings
+I’m always turning electric quotes on and off, so it helps to have this bound for quick access. It might be even better to set up the package to understand when it’s in a source block and so on.
+#+BEGIN_SRC emacs-lisp
+(map! :leader
+      :prefix ("t")
+      :desc "Electric quote local mode"
+      "q" #'electric-quote-local-mode)
 #+END_SRC
 
 ** “Verbal” bindings and tidbits
@@ -250,7 +260,6 @@ Saves to a temp file and puts the filename in the kill ring."
     (message filename)))
 #+END_SRC
 
-*** Notifications
 #+BEGIN_SRC emacs-lisp
 ;; alert configurations
 (after! alert
@@ -314,6 +323,7 @@ Need to set ~org-src-block-faces~!
     (setq org-src-block-faces
     '(("python" (:family "Fira Code"))
       ("jupyter-python" (:family "Fira Code"))
+      ("jupyter-julia" (:family "Fira Code"))
       ("elisp" (:family "Fira Code")))))
 #+END_SRC
 
@@ -363,6 +373,7 @@ It is sometimes advised, I think, to abrogate the use of advice. But I thought i
   ;;  (evil-append-line))
   ;; (read-only-mode 0))
 #+END_SRC
+
 ** Python
 For some reason, Doom’s Python module is relatively impoverished compared to the Spacemacs Python layer, in that few of the keybindings are evil-ified. I’m trying to make up the difference here.
 
@@ -439,6 +450,12 @@ This /doesn’t quite work/ right now. In particular, the /first/ python buffer 
     :lambda "lambda"))
 #+END_SRC
 
+** Julia
+Override the default 1.0 environment for my actual Julia version.
+#+BEGIN_SRC emacs-lisp
+(setq lsp-julia-default-environment "~/.julia/environments/v1.5")
+#+END_SRC
+
 ** Company
 Will this make ~company-mode~ work?
 
@@ -450,6 +467,7 @@ Will this make ~company-mode~ work?
     lisp-mode
     sh-mode
     python-mode
+    julia-mode
     rust-mode
     js-mode)
   '(:separate
@@ -528,6 +546,7 @@ All the overridden org-mode variables:
              (org-pretty-tags-mode)
              (add-hook 'post-self-insert-hook #'my/latex-fragment-completion 'append 'local)))
 #+END_SRC
+
 ** Notebook emulation
 I want to be able to use Org for literate programming in a variety of scripting languages. In particular, I’d like to be able to match the functionality of Jupyter notebooks without dealing with its json format, clunky browser interface, and so on.
 
@@ -551,7 +570,8 @@ We already have ~Enter~ mapped to execution of a single source block, but it wou
       :prefix ("j" . "jupyter")
       :desc "Clear results" "C" #'jupyter-org-clear-all-results
       :desc "Interrupt kernel" "I" #'jupyter-org-interrupt-kernel
-      :desc "Run REPL" "R" #'jupyter-run-repl
+      :desc "Run REPL" "r" #'jupyter-run-repl
+      :desc "Restart kernel" "R" #'jupyter-repl-restart-kernel
       :desc "Execute subtree" "S" #'jupyter-org-execute-subtree
       :desc "Goto error" "e" #'jupyter-org-goto-error
       :desc "Goto block" "g" #'jupyter-org-jump-to-block
@@ -565,6 +585,21 @@ We already have ~Enter~ mapped to execution of a single source block, but it wou
 I’d also like to have a capture template for making ~jupyter-python~ notebooks. That can happen another time.
 
 I’d also like to have a function that selects a subtree via ~ivy~ (doing something like ~org-goto~) and evaluates it (doing something like ~jupyter-execute-subtree~), all in-place.
+
+Finally, let’s set some defaults that make it relatively easy to run a kernel in the common case. The “session” variable /should/ almost always be overridden in practice.
+
+#+BEGIN_SRC emacs-lisp
+(setq org-babel-default-header-args:jupyter-python
+      '((:async . "yes")
+        (:session . "py")
+        (:kernel . "python3")))
+
+(setq org-babel-default-header-args:jupyter-julia
+      '((:async . "yes")
+        (:session . "jl")
+        (:kernel . "julia-1.5")))
+#+END_SRC
+
 ** Citation management
 This is a great big mess. You really need to figure it out at some point.
 
@@ -573,24 +608,35 @@ Here are some keybindings for common things you might want to do with ~org-zotxt
 #+BEGIN_SRC emacs-lisp
 (map! :after org
       :map org-mode-map
-      :localleader
+      :leader
       :prefix ("z" . "references")
+      :desc "Zotxt: insert reference link"
       "i" #'org-zotxt-insert-reference-link
+      :desc "Zotxt: update reference link"
       "u" #'org-zotxt-update-reference-link-at-point
+      :desc "Zotxt: open attachment"
       "o" #'org-zotxt-open-attachment)
 #+END_SRC
 
 And these are some similar bindings for ~org-roam-bibtex~. I probably want this to be /globally/ accessible, really, but I’m not sure where to bind it. Looks like ~SPC-z~ is open, but I also want org-specific functions bound to the same cluster.
 
 #+BEGIN_SRC emacs-lisp
-(map! :after org-roam-bibtex
-      :map org-mode-map
-      :localleader
+(map! ;; :map org-mode-map
+      ;; :localleader
+      :leader
       :prefix ("z" . "references")
       "b" #'ivy-bibtex)
 #+END_SRC
 
-I also want to change ~ivy-bibtex-default-action~, which in the default configuration (~ivy-bibtex-open-any~) simply opens a document. I’d like the option to open my notes instead. This variable should be set to a function that lets me choose an action, like when I click on a ~cite~ link. However, I can’t use /exactly/ the same code, since it uses ~org-ref-cite-hydra~ in ~org-ref-ivy-cite.el~, which in turn calls ~-at-point~ functions, which have no mechanism to pass a key as a parameter.
+I also want to change ~ivy-bibtex-default-action~, which in the default configuration (~ivy-bibtex-open-any~) simply opens a document. I’d like the option, for example, to open my notes instead. ~ivy-dispatching-call~ provides this. But it doesn't take a ~candidate~ argument like ~ivy-bibtex-open-any~ does, so we need to assign a lambda that ignores this argument.
+
+There’s a slight issue: see the ~ivy-set-actions~ block in  ~ivy-bibtex.el~. A whole lot more functions are bound than are visible when we call this function. Why?
+
+#+BEGIN_SRC emacs-lisp
+(after! ivy-bibtex
+  (setq ivy-bibtex-default-action
+        #'(lambda (candidate) (ivy-dispatching-call))))
+#+END_SRC
 
 Here are some settings from the not-yet-merged ~biblio~ module, which I have in my private modules directory. I’m not sure if these settings are correct or even necessary. In particular, I don’t think I’m using ~+biblio-pdf-library-dir~ at all.
 
@@ -654,6 +700,7 @@ Now, in order for ~org-ref-open-notes-at-point~ (via ~orb-edit-notes~) to work p
                   ":NOTER_PAGE:\n"
                   ":END:\n"))))
 #+END_SRC
+
 ** Org-roam
 #+BEGIN_SRC emacs-lisp
 ;; org-roam configurations
@@ -710,6 +757,7 @@ We also want closing the Noter document buffer to quit the Noter session. This s
    org-extend-today-until 4      ;; burn the midnight oil
    ))
 #+END_SRC
+
 ** Symbols
 See, as usual, [[https://tecosaur.github.io/emacs-config/config.html#symbols][tecosaur’s config]] for lots of good hints. I’ve shamelessly snagged these as the basis for my custom ligatures. All of tecosaur’s are still in here, but I think I’ll prune a lot of them.
 
@@ -729,9 +777,8 @@ All right, this is almost working. The major problem that remains is that the Em
               :latex_class   "🄲"
               :beamer_header "↠"
               :jupyter_py    ""
+              :jupyter_jl    "⛬"
               :emacs_lisp    ""
-              ;; :begin_quote   "❮"
-              ;; :end_quote     "❯"
               :begin_export  "⯮"
               :end_export    "⯬"
               :em_dash       "—"
@@ -749,14 +796,22 @@ All right, this is almost working. The major problem that remains is that the Em
     :latex_header  "#+LATEX_HEADER:"
     :beamer_header "#+BEAMER_HEADER:"
     :jupyter_py    "jupyter-python"
+    :jupyter_jl    "jupyter-julia"
     :emacs_lisp    "emacs-lisp"
     :begin_quote   "#+BEGIN_QUOTE"
+    :begin_quote   "#+begin_quote"
     :end_quote     "#+END_QUOTE"
+    :end_quote     "#+end_quote"
+    :begin_example "#+BEGIN_EXAMPLE"
+    :begin_example "#+begin_example"
+    :end_example "#+END_EXAMPLE"
+    :end_example "#+end_example"
     :begin_export  "#+BEGIN_EXPORT"
     :end_export    "#+END_EXPORT"
     :em_dash       "---"
     :en_dash       "--"))
 #+END_SRC
+
 * LaTeX
 Maybe this and ~org-mode~ should be refiled under [[*Documents][Documents]]; I’m not sure. It has its own top-level header for now.
 
