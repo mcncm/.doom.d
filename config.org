@@ -41,15 +41,15 @@ This is just the block at the top of the ~config.el~ that ships with Doom Emacs,
 ;;       doom-variable-pitch-font (font-spec :family "sans" :size 13))
 (setq my/code-family "Fira Code")
 (setq my/code-size 20)
-;; (setq my/text-font "Computer Modern")
-;; (setq my/text-font "Iosevka")
-(setq my/text-font "ETBembo")
+;; (setq my/text-family "Computer Modern")
+;; (setq my/text-family "Iosevka")
+(setq my/text-family "ETBookOT")
+;; (setq my/text-family "National Park")
 (setq my/text-size 25)
 
 (setq doom-font (font-spec :family my/code-family :size my/code-size)
       doom-big-font (font-spec :family my/code-family :size 30)
-      doom-variable-pitch-font (font-spec :family my/text-font :size my/text-size :weight 'thin))
-
+      doom-variable-pitch-font (font-spec :family my/text-family :size my/text-size :weight 'thin))
 
 ;; There are two ways to load a theme. Both assume the theme is installed and
 ;; available. You can either set `doom-theme' or manually load a theme with the
@@ -104,6 +104,12 @@ I’d also like to add this so tramp will work properly on my NixOS server.
 (after! tramp
   (add-to-list 'tramp-remote-path "/run/current-system/sw/bin"))
 #+END_SRC
+
+The large-file-size confirmation should be a bit bigger -- I keep getting asked for confirmation to open ~.pdf~ papers.
+#+BEGIN_SRC emacs-lisp
+(setq large-file-warning-threshold 20000000)
+#+END_SRC
+
 ** Some extra bindings
 I’m always turning electric quotes on and off, so it helps to have this bound for quick access. It might be even better to set up the package to understand when it’s in a source block and so on.
 #+BEGIN_SRC emacs-lisp
@@ -153,13 +159,21 @@ I’d also like my dictionary popups to fill a little more of the screen than th
     :height 0.3   ;; fill this much of the screen
     ))
 #+END_SRC
+*** Dictionary settings
+I couldn’t figure out how to make this work until following tecosaur. Thanks, tecosaur.
+#+BEGIN_SRC emacs-lisp
+(setq ispell-dictionary "en"
+      ispell-personal-dictionary (expand-file-name
+                                  ".ispell_personal"
+                                  doom-private-dir))
+#+END_SRC
 
 ** Little helper functions
 #+BEGIN_SRC emacs-lisp
 (defun my/find-file-in-home ()
   "Search for a file in home directory."
   (interactive)
-  (ido-find-file-in-dir gnus-home-directory))
+  (ido-find-file-in-dir "~"))
 
 (setq my/org-agenda-directory (concat org-directory "/agenda"))
 
@@ -167,6 +181,17 @@ I’d also like my dictionary popups to fill a little more of the screen than th
   "Search for a file in home directory."
   (interactive)
   (ido-find-file-in-dir my/org-agenda-directory))
+
+(defun my/find-file-in-nixos ()
+  "Search for a file in my NixOS config directory"
+  (interactive)
+  (ido-find-file-in-dir "~/.config/nixos"))
+
+(defun my/find-file-in-server ()
+  "search for a file in my home server homdir"
+  (interactive)
+  (ido-find-file-in-dir
+   (concat "/ssh:mcncm@" my/home-server-hostname ":/home/mcncm")))
 #+END_SRC
 
 I want these bound to convenient keys to quickly find files in my home directory and agenda.
@@ -174,7 +199,10 @@ I want these bound to convenient keys to quickly find files in my home directory
 #+BEGIN_SRC emacs-lisp
 (map! :map doom-leader-file-map
       "h" #'my/find-file-in-home
-      "a" #'my/find-file-in-agenda)
+      "a" #'my/find-file-in-agenda
+      "n" #'my/find-file-in-nixos
+      "b" #'my/find-file-in-server  ;; 'b' for 'box'
+      )
 #+END_SRC
 
 Here are two little auxiliary functions for retrieving palette colors. I’m not sure if there’s already a (presumably Doom-specific) function that accomplishes this, but if there is I should use it.
@@ -245,6 +273,11 @@ Let’s run this when we change themes, so it’s colored correctly.
 #+END_SRC
 
 ** Odds and ends
+See ~all-the-icons~ major mode icon in modeline
+#+BEGIN_SRC emacs-lisp
+(setq-default doom-modeline-major-mode-icon t)
+#+END_SRC
+
 A fun little thing you can do in Emacs 27. Function due to an internet stranger, whom I should cite if I ever find them again.
 
 #+BEGIN_SRC emacs-lisp
@@ -299,11 +332,15 @@ Some sensible org theme things. I think I snagged these from [[https://github.co
   ;; A Doom Emacs macro that provides a simpler syntax for `custom-theme-set-faces`
   (custom-theme-set-faces!
     'user
+    ;; nil
     ;; Why does 0.8 seem to be about right? Well, it’s the same as the ratio
     ;; between my/code-size and my/text-size. That’s probably a hint as to
     ;; what’s going on.
     `(org-code :family ,my/code-family :height 0.8)
+    `(org-block-begin-line :height 1.0) ;; What do I have to do with this
     `(org-block :family ,my/code-family :height 0.8)
+    `(org-drawer :inherit default :family ,my/code-family)
+    `(org-special-keyword :inherit default :family ,my/code-family)
     `(org-level-8 ,@headline)
     `(org-level-7 ,@headline)
     `(org-level-6 ,@headline)
@@ -316,15 +353,15 @@ Some sensible org theme things. I think I snagged these from [[https://github.co
 #+END_SRC
 
 Block faces: which faces should we use for which source languages?
-Need to set ~org-src-block-faces~!
+Need to set ~org-src-block-faces~, and we should set it /before/ loading org mode.
 
 #+BEGIN_SRC emacs-lisp :tangle no
 (after! org
-    (setq org-src-block-faces
-    '(("python" (:family "Fira Code"))
-      ("jupyter-python" (:family "Fira Code"))
-      ("jupyter-julia" (:family "Fira Code"))
-      ("elisp" (:family "Fira Code")))))
+  (setq org-src-block-faces
+        `(("python" (:family ,my/code-family))
+          ("jupyter-python" (:family ,my/code-family))
+          ("jupyter-julia" (:family ,my/code-family))
+          ("emacs-lisp" (:family ,my/code-family)))))
 #+END_SRC
 
 ** Ligatures
@@ -353,7 +390,7 @@ I want to ensure that my compilation buffers show up on the right-hand side. Che
   (set-popup-rule! "^\\*rustic"
     :select t    ;; focus the window after it opens
     ;; :action
-    :side 'right ;; on the rhs of the screen
+    ;; :side 'right ;; on the rhs of the screen
     :width 0.5   ;; and fill 50% of it.
   )
 )
@@ -440,16 +477,17 @@ This /doesn’t quite work/ right now. In particular, the /first/ python buffer 
 
 #+BEGIN_SRC emacs-lisp
 (after! python
-  ;; the set-ligatures! macro doesn’t do what I expect
-  ;; => turns out it doesn’t unset if the key is the first one
-  ;;    in the list. For this silly reason, we’ll insert this
-  ;;    Ruby ligature in the first place.
-  (set-ligatures! 'ruby-mode :lambda "lambda")
   (set-ligatures! 'python-mode nil) ;; remove the defaults
   (set-ligatures! 'python-mode  ;; and insert new ones
     :lambda "lambda"))
 #+END_SRC
-
+** C/C++
+No ligatures, please!
+#+BEGIN_SRC emacs-lisp
+(after! cc-mode
+  (set-ligatures! 'c++-mode nil)
+  (set-ligatures! 'c-mode nil))
+#+END_SRC
 ** Julia
 Override the default 1.0 environment for my actual Julia version.
 #+BEGIN_SRC emacs-lisp
@@ -481,6 +519,8 @@ Will this make ~company-mode~ work?
 
 * Org-mode
 ** Main Org-mode settings
+:PROPERTIES:
+:END:
 A little helper function for completing latex fragments. Some notes:
 + Newlines aren’t working. It might be that you’re supposed to use a "character class" like ~[:space:]~ or ~\s-~, but neither of these
 + ~looking-back~ is known to be quite slow. See [[https://emacs.stackexchange.com/a/12744][this answer]].
@@ -504,23 +544,39 @@ All the overridden org-mode variables:
    org-startup-with-latex-preview t
    org-agenda-files (directory-files my/org-agenda-directory t "\.org$")
    org-latex-create-formula-image-program 'imagemagick)
-  (setq org-format-latex-options (plist-put org-format-latex-options :scale 2.0))
+  (setq org-format-latex-options (plist-put org-format-latex-options :scale 1.0))
   ;; Specify the extra latex packages we want to use, and include them.
-  (setq org-latex-packages-extra '("tikz" "tikz-cd" "physics")
+  (setq org-latex-packages-extra
+        '("tikz"
+          "tikz-cd"
+          "physics"     ;; bras and kets, etc.
+          "qcircuit"    ;; take a guess
+          "cmll"
+          "bussproofs"  ;; sequent calculus
+          "mathtools")
         ;; This assumes that there was nothing in this variable to begin with!
         org-latex-packages-alist (mapcar (lambda (package) `("" ,package t))
                                          org-latex-packages-extra))
 
   ;; This will render the bullets more correctly!
   (set-face-attribute 'org-superstar-header-bullet nil :family "Fira Code")
-  ;; If this doesn’t render correctly: it’s a beaker
-  (push '("research" . "") org-pretty-tags-surrogate-strings)
   ;; If this doesn’t render correctly: it’s a book
   (push '("physical" . "") org-pretty-tags-surrogate-strings)
   ;; If tihs doesn’t render correctly: it’s a sticky note
   (push '("noter" . "") org-pretty-tags-surrogate-strings)
-  ;; If tihs doesn’t render correctly: it’s a pencil
+  ;; If this doesn’t render correctly: it’s a pencil
   (push '("noter" . "") org-pretty-tags-surrogate-strings)
+  ;; If this doesn’t render correctly: it’s a bunch of blocks
+  (push '("material" . "") org-pretty-tags-surrogate-strings)
+  ;; If this doesn’t render correctly: it’s a beaker
+  ;;
+  ;; This tag is for questions I want to look into and read the literature on.
+  (push '("research" . "") org-pretty-tags-surrogate-strings)
+  ;; This tag is mostly for journal entries, and _should_ be a lightbulb
+  (push '("idea" . "") org-pretty-tags-surrogate-strings)
+  ;; If this doesn’t render correctly: it’s a
+  ;; This tag is for open problems
+  (push '("open" . "🯄") org-pretty-tags-surrogate-strings)
 
   ;; Overwrites the app that should be used to open pdfs from Emacs. This was
   ;; originally set to ~default~ in org.el, which uses the "system default pdf
@@ -545,6 +601,17 @@ All the overridden org-mode variables:
              (org-superstar-mode)
              (org-pretty-tags-mode)
              (add-hook 'post-self-insert-hook #'my/latex-fragment-completion 'append 'local)))
+#+END_SRC
+
+Another thing I want: I often insert drawers of questions, and would like a special keybinding to make that easier.
+
+#+BEGIN_SRC emacs-lisp
+
+(map! :after org
+      :map org-mode-map
+      :localleader
+      :desc "Insert questions"
+      "Q" #'(lambda () (org-insert-drawer "QUESTIONS")))
 #+END_SRC
 
 ** Notebook emulation
@@ -603,13 +670,13 @@ Finally, let’s set some defaults that make it relatively easy to run a kernel 
 ** Citation management
 This is a great big mess. You really need to figure it out at some point.
 
-Here are some keybindings for common things you might want to do with ~org-zotxt~. However, note that this is deprecated now that I’m using ~org-roam-bibtex~. The ~z~ originally stood for ~zotxt~, but it now makes sense to broaden the mnemonic to /zitieren/.
+Here are some keybindings for common things you might want to do with ~org-zotxt~. However, note that this is deprecated now that I’m using ~org-roam-bibtex~.
 
 #+BEGIN_SRC emacs-lisp
 (map! :after org
       :map org-mode-map
       :leader
-      :prefix ("z" . "references")
+      :prefix ("\"" . "references")
       :desc "Zotxt: insert reference link"
       "i" #'org-zotxt-insert-reference-link
       :desc "Zotxt: update reference link"
@@ -624,7 +691,7 @@ And these are some similar bindings for ~org-roam-bibtex~. I probably want this 
 (map! ;; :map org-mode-map
       ;; :localleader
       :leader
-      :prefix ("z" . "references")
+      :prefix ("\"" . "references")
       "b" #'ivy-bibtex)
 #+END_SRC
 
@@ -652,7 +719,6 @@ Here are some settings from the not-yet-merged ~biblio~ module, which I have in 
 #+END_SRC
 
 We have to ensure that we open pdfs by looking up the bibliography ~file~ field, rather than by looking in a pdf directory.
-
 #+BEGIN_SRC emacs-lisp
 (after! org-roam-bibtex
   (setq! org-ref-get-pdf-filename-function 'org-ref-get-pdf-filename-helm-bibtex)
@@ -701,6 +767,37 @@ Now, in order for ~org-ref-open-notes-at-point~ (via ~orb-edit-notes~) to work p
                   ":END:\n"))))
 #+END_SRC
 
+I’d also like to be able to pop up a temporary buffer with the abstract of a citation.
+
+#+BEGIN_SRC emacs-lisp
+;; Has a mismatched paren or something
+;; (after! ivy-bibtex
+;;   (defun my/org-ref-show-abstract-at-point (&optional thekey)
+;;     "Show abstract at point"
+;;     (interactive)
+;;     (let temp-buffer-name "*abstract*"
+;;          (with-output-to-temp-buffer temp-buffer-name
+;;            (print "The abstract")
+;;            )
+;;          )
+;;     )
+;;   )
+
+  ;; Add a new hydra head for this action
+  ;; (defhydra+ org-ref-cite-hydra (:color blue)
+  ;;   "_a_: Show abstract"
+  ;;   ("a" my/org-ref-show-abstract-at-point nil))
+  ;;  )
+#+END_SRC
+
+I’d also like to use a distinct face for citations.
+#+BEGIN_SRC emacs-lisp
+(after! 'org-ref
+  (set-face-attribute 'org-ref-cite-face nil
+                      :inherit 'org-table
+                      :weight 'medium))
+#+END_SRC
+
 ** Org-roam
 #+BEGIN_SRC emacs-lisp
 ;; org-roam configurations
@@ -736,13 +833,25 @@ I’m also using ~org-roam-server~ to visualize the org graph. So far, these set
 #+END_SRC
 
 ** Org-noter
-By default, Noter opens a new frame, although this is rarely the behavior I actually want. Symmetrically, we should keep the frame at the end of the Noter session.
+By default, Noter opens a new frame, although this is rarely the behavior I actually want. Symmetrically, we should keep the frame at the end of the Noter session. Let’s also change the default split fraction when editing notes.
 
 #+BEGIN_SRC emacs-lisp
 (after! org-noter
-  (setq org-noter-always-create-frame nil
-        org-noter-kill-frame-at-session-end nil))
+  (setq! org-noter-always-create-frame nil
+         org-noter-kill-frame-at-session-end nil
+         org-noter-doc-split-fraction '(0.60 . 0.40)))
 #+END_SRC
+
+Let’s also set a key to kill the noter session.
+#+BEGIN_SRC emacs-lisp
+(map! :after org-noter
+      :map org-noter-doc-mode-map
+      :localleader
+      :desc
+      "Kill noter session"
+      "k" #'org-noter-kill-session)
+#+END_SRC
+
 
 We also want closing the Noter document buffer to quit the Noter session. This seems to actually be a /default/ behavior, since ~q~ is bound to ~org-noter-kill-session~ in ~org-noter-doc-mode~. But in practice this key just closes the doc buffer; it doesn’t remove the notes window as well.
 
@@ -781,8 +890,9 @@ All right, this is almost working. The major problem that remains is that the Em
               :emacs_lisp    ""
               :begin_export  "⯮"
               :end_export    "⯬"
-              :em_dash       "—"
-              :en_dash       "–"))
+              ;; :em_dash       "—"
+              ;; :en_dash       "–"
+              ))
   (set-ligatures! 'org-mode
     :merge t
     :checkbox      "[ ]"
@@ -808,8 +918,9 @@ All right, this is almost working. The major problem that remains is that the Em
     :end_example "#+end_example"
     :begin_export  "#+BEGIN_EXPORT"
     :end_export    "#+END_EXPORT"
-    :em_dash       "---"
-    :en_dash       "--"))
+    ;; :em_dash       "---"
+    ;; :en_dash       "--"
+    ))
 #+END_SRC
 
 * LaTeX
@@ -831,14 +942,15 @@ Doom doesn’t supply a lot of evil bindings for TeX by default, so let’s do t
 )
 #+END_SRC
 
-Finally, pdf popups (which -- I think -- will mostly come from tex documents) should appear on the right-hand side.
+Finally, pdf popups (which -- I think -- will mostly come from ~.tex~ documents) should appear on the right-hand side.
 #+BEGIN_SRC emacs-lisp
 (after! popup
   (set-popup-rule! "^.*.pdf"
     :select nil    ;; don’t focus the window after it opens
     ;; :action
-    :side 'right ;; on the rhs of the screen
-    :width 0.5   ;; and fill 50% of it.
+    :side 'right   ;; on the rhs of the screen
+    :width 0.5      ;; and fill 50% of it.
+    :quit nil      ;; don’t disappear on me
   )
 )
 #+END_SRC
@@ -853,9 +965,15 @@ Some pdf viewing preferences: start in ~midnight-minor-mode~, and use theme colo
         (cons (my/theme-color 'fg)
               (my/theme-color 'bg))))
 
+(defun my/blah ()
+  (message "loaded a theme..."))
+
 ;; Set these colors whenever you load a theme
 (add-hook! 'doom-load-theme-hook
            :append #'my/set-pdf-view-midnight-colors)
+
+(add-hook! 'doom-load-theme-hook
+           :append #'my/blah)
 
 ;; Start in midnight mode!
 (add-hook! 'pdf-view-mode-hook
@@ -909,6 +1027,13 @@ These settings specify how to retrieve mail.
  ;; should just quit when I type `q`
  mu4e-confirm-quit nil)
 #+END_SRC
+
+I want some better defaults for formatting (particularly HTML) emails.
+#+BEGIN_SRC emacs-lisp
+(setq org-msg-options
+      "html-postamble:nil toc:nil author:nil email:nil \\n:t -:t ^:{} H:5 num:0")
+#+END_SRC
+
 
 And these are just setting up usual text-viewing minor modes. I wonder if I should fold these into ~text-mode~, since they’re redundant with some of the ~org-mode~ minor modes.
 

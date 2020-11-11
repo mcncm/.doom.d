@@ -85,7 +85,7 @@
 
        :checkers
        syntax              ; tasing you for every semicolon you forget
-       spell             ; tasing you for misspelling mispelling
+       (spell +aspell)             ; tasing you for misspelling mispelling
        grammar           ; tasing grammar mistake every you make
 
        :tools
@@ -107,7 +107,7 @@
         +docsets)              ; navigate your code and its documentation
        lsp
        ;;macos             ; MacOS-specific commands
-       magit             ; a git porcelain for Emacs
+       (magit +forge)             ; a git porcelain for Emacs
        ;;make              ; run make tasks from Emacs
        pass              ; password manager for nerds
        pdf               ; pdf enhancements
@@ -119,9 +119,9 @@
        ;;upload            ; map local to remote projects via ssh/ftp
 
        :lang
-       ;;agda              ; types of types of types of types...
+       (agda +local)        ; types of types of types of types...
        (cc +lsp)                ; C/C++/Obj-C madness
-       ;;clojure           ; java with a lisp
+       (clojure +lsp)           ; java with a lisp
        common-lisp       ; if you've seen one lisp, you've seen them all
        coq               ; proofs-as-programs
        ;;crystal           ; ruby at the speed of c
@@ -138,7 +138,9 @@
        ;;fstar             ; (dependent) types and (monadic) effects and Z3
        ;;gdscript          ; the language you waited for
        ;;(go +lsp)         ; the hipster dialect
-       (haskell +dante +lsp)  ; a language that's lazier than I am
+       (haskell
+        ;; +dante
+        +lsp)  ; a language that's lazier than I am
        ;;hy                ; readability of scheme w/ speed of python
        idris             ;
        json              ; At least it ain't XML
@@ -150,14 +152,14 @@
         +lsp
         +fold
         +latexmk)             ; writing papers in Emacs has never been so fun
-       ;; lean
+       lean
        ;;factor
        ;;ledger            ; an accounting system in Emacs
        ;;lua               ; one-based indices? one-based indices
        markdown          ; writing docs for people to ignore
        ;;nim               ; python + lisp at the speed of c
        nix               ; I hereby declare "nix geht mehr!"
-       ;;ocaml             ; an objective camel
+       ocaml             ; an objective camel
        (org +roam
             +journal
             +jupyter
@@ -191,7 +193,7 @@
 
        :app
        ;;calendar
-       irc               ; how neckbeards socialize
+       ;;irc               ; how neckbeards socialize
        ;;(rss +org)        ; emacs as an RSS reader
        ;;twitter           ; twitter client https://twitter.com/vnought
 
