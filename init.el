@@ -121,8 +121,8 @@
        :lang
        (agda +local)        ; types of types of types of types...
        (cc +lsp)                ; C/C++/Obj-C madness
-       (clojure +lsp)           ; java with a lisp
-       common-lisp       ; if you've seen one lisp, you've seen them all
+       ;; (clojure +lsp)           ; java with a lisp
+       ;; common-lisp       ; if you've seen one lisp, you've seen them all
        coq               ; proofs-as-programs
        ;;crystal           ; ruby at the speed of c
        ;;csharp            ; unity, .NET, and mono shenanigans
@@ -159,11 +159,11 @@
        markdown          ; writing docs for people to ignore
        ;;nim               ; python + lisp at the speed of c
        nix               ; I hereby declare "nix geht mehr!"
-       ocaml             ; an objective camel
+       ;; ocaml             ; an objective camel
        (org +roam
             +journal
-            +jupyter
-            +present       ; export to beamer, reveal.js,…
+            ;; +jupyter  ; disabled for now; doesn't build correctly
+            ;; +present       ; export to beamer, reveal.js,…
             +noter)    ; organize your plain life in plain text
        ;;php               ; perl's insecure younger brother
        ;;plantuml          ; diagrams for confusing people more
@@ -175,7 +175,8 @@
        ;;rest              ; Emacs as a REST client
        ;;rst               ; ReST in peace
        ;;(ruby +rails)     ; 1.step {|i| p "Ruby is #{i.even? ? 'love' : 'life'}"}
-       (rust +lsp)              ; Fe2O3.unwrap().unwrap().unwrap().unwrap()
+       (rust
+        +lsp)              ; Fe2O3.unwrap().unwrap().unwrap().unwrap()
        ;;scala             ; java, but good
        ;;scheme            ; a fully conniving family of lisps
        sh                ; she sells {ba,z,fi}sh shells on the C xor

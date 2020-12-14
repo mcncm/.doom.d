@@ -25,7 +25,7 @@ This is just the block at the top of the ~config.el~ that ships with Doom Emacs,
 
 ;; If you use `org' and don't want your org files in the default location below,
 ;; change `org-directory'. It must be set before org loads!
-(setq org-directory (getenv "ORG_DIR"))
+(setq org-directory "~/org")
 
 ;; Doom exposes five (optional) variables for controlling fonts in Doom. Here
 ;; are the three important ones:
@@ -40,8 +40,9 @@ This is just the block at the top of the ~config.el~ that ships with Doom Emacs,
 ;; (setq doom-font (font-spec :family "monospace" :size 12 :weight 'semi-light)
 ;;       doom-variable-pitch-font (font-spec :family "sans" :size 13))
 (setq my/code-family "Fira Code")
+;; (setq my/code-family "Fantasque Sans")
 (setq my/code-size 20)
-;; (setq my/text-family "Computer Modern")
+;; (setq my/text-family "Georgia")
 ;; (setq my/text-family "Iosevka")
 (setq my/text-family "ETBookOT")
 ;; (setq my/text-family "National Park")
@@ -61,7 +62,7 @@ This is just the block at the top of the ~config.el~ that ships with Doom Emacs,
 (setq display-line-numbers-type 'relative)
 
 
-;; Here are some additional functions/macros that could help you configure Doom:
+;; Here are some additional functions/macros that could help you configure Doom
 ;;
 ;; - `load!' for loading external *.el files relative to this one
 ;; - `use-package!' for configuring packages
@@ -80,6 +81,19 @@ This is just the block at the top of the ~config.el~ that ships with Doom Emacs,
 #+END_SRC
 
 * Generalities
+** System things
+Here are some directories I want to keep track of.
+#+begin_src  emacs-lisp
+(setq
+  my/nixos-dir "~/.config/nixos"
+  my/server-homedir (concat
+                     "/ssh:mcncm@"
+                     my/home-server-hostname
+                     ":/home/mcncm")
+  my/org-agenda-dir (concat
+                     org-directory
+                     "/agenda"))
+#+end_src
 ** Some better defaults
 I’d like to set some variables that generally make life better.
 
@@ -110,13 +124,18 @@ The large-file-size confirmation should be a bit bigger -- I keep getting asked 
 (setq large-file-warning-threshold 20000000)
 #+END_SRC
 
+I’ve just encountered an image scaling issue that sometimes makes inline raster images look awful. Rather than the default ~'auto~ value, they should be unscaled.
+#+begin_src emacs-lisp
+(setq image-scaling-factor 1)
+#+end_src
+
 ** Some extra bindings
 I’m always turning electric quotes on and off, so it helps to have this bound for quick access. It might be even better to set up the package to understand when it’s in a source block and so on.
 #+BEGIN_SRC emacs-lisp
 (map! :leader
       :prefix ("t")
       :desc "Electric quote local mode"
-      "q" #'electric-quote-local-mode)
+      "q" #'electric-quote-mode)
 #+END_SRC
 
 ** “Verbal” bindings and tidbits
@@ -137,8 +156,13 @@ There are a few functions I’d really like bound to keyboard shortcuts that are
   "r" #'spell-fu-word-remove)
  (:after google-translate
   (:prefix-map ("t" . "translate")
-  "t" #'google-translate-at-point
+  :desc "Translate dwim"
+  "t" #'(lambda () (google-translate-at-point '(nil nil)))
+  :desc "Translate at point"
+  "T" #'google-translate-at-point
+  :desc "Translate buffer"
   "b" #'google-translate-buffer
+  :desc "Query translate"
   "q" #'google-translate-query-translate)))
 #+END_SRC
 
@@ -169,40 +193,22 @@ I couldn’t figure out how to make this work until following tecosaur. Thanks, 
 #+END_SRC
 
 ** Little helper functions
-#+BEGIN_SRC emacs-lisp
-(defun my/find-file-in-home ()
-  "Search for a file in home directory."
-  (interactive)
-  (ido-find-file-in-dir "~"))
-
-(setq my/org-agenda-directory (concat org-directory "/agenda"))
-
-(defun my/find-file-in-agenda ()
-  "Search for a file in home directory."
-  (interactive)
-  (ido-find-file-in-dir my/org-agenda-directory))
-
-(defun my/find-file-in-nixos ()
-  "Search for a file in my NixOS config directory"
-  (interactive)
-  (ido-find-file-in-dir "~/.config/nixos"))
-
-(defun my/find-file-in-server ()
-  "search for a file in my home server homdir"
-  (interactive)
-  (ido-find-file-in-dir
-   (concat "/ssh:mcncm@" my/home-server-hostname ":/home/mcncm")))
-#+END_SRC
-
-I want these bound to convenient keys to quickly find files in my home directory and agenda.
+There are no longer any helper functions here. I should figure out where to put these key bindings.
 
 #+BEGIN_SRC emacs-lisp
 (map! :map doom-leader-file-map
-      "h" #'my/find-file-in-home
-      "a" #'my/find-file-in-agenda
-      "n" #'my/find-file-in-nixos
-      "b" #'my/find-file-in-server  ;; 'b' for 'box'
-      )
+      :leader
+      :prefix ("f" . "file")  ;; Is there a way to do this without getting the prefix just so?
+      :desc "Find file in home"
+      "h" #'(lambda () (interactive) (ido-find-file-in-dir "~"))
+      :desc "Find file in home/tmp"
+      "t" #'(lambda () (interactive) (ido-find-file-in-dir "~/tmp"))
+      :desc "Find file in agenda"
+      "a" #'(lambda () (interactive) (ido-find-file-in-dir my/org-agenda-dir))
+      :desc "Find file in nixos config"
+      "n" #'(lambda () (interactive) (ido-find-file-in-dir my/nixos-dir))
+      :desc "Find file on server"
+      "b" #'(lambda () (interactive) (ido-find-file-in-dir my/server-homedir)))
 #+END_SRC
 
 Here are two little auxiliary functions for retrieving palette colors. I’m not sure if there’s already a (presumably Doom-specific) function that accomplishes this, but if there is I should use it.
@@ -227,11 +233,15 @@ Here are two little auxiliary functions for retrieving palette colors. I’m not
 #+END_SRC
 
 ** Behold the dodecahedron!
-This is my Doom banner, or splash screen icon. I’d also like to change it from time to time, but I like this dodecahedron well enough.
+This is my Doom banner, or splash screen icon. It's chosen randomly from a directory full of banner options. One of these is a dodecahedron that I'm quite fond of.
 
 #+BEGIN_SRC emacs-lisp
 (setq +doom-dashboard-banner-dir "~/.doom.d/banner"
-      my/banner-template-file "dodecahedron.svg"
+      ;; Now pick a random banner!
+      my/banner-template-file (seq-random-elt
+                               (directory-files
+                                +doom-dashboard-banner-dir t
+                                directory-files-no-dot-files-regexp))
       +doom-dashboard-banner-file "banner.svg")
 #+END_SRC
 
@@ -262,11 +272,11 @@ A fun little trick and terrible hack to recolor the banner. Maybe I should try ~
            "s/#000000/" (my/theme-banner-color) "/g" "; "
            ;; replace white with background color
            "s/#FFFFFF/" (my/theme-color 'bg) "/g" "\" "
-           +doom-dashboard-banner-dir "/" my/banner-template-file " > "
+           my/banner-template-file " > "
            +doom-dashboard-banner-dir "/" +doom-dashboard-banner-file)))
 #+END_SRC
 
-Let’s run this when we change themes, so it’s colored correctly.
+Let’s run this when we change themes, so it’s colored correctly. I guess that was a little ugly, since ~my/banner-template-file~ is an absolute path, while ~+doom-dashboard-banner-file~ is relative to ~+doom-dashboard-banner-dir~.
 
 #+BEGIN_SRC emacs-lisp
 (add-hook! 'doom-load-theme-hook #'my/recolor-banner)
@@ -355,13 +365,13 @@ Some sensible org theme things. I think I snagged these from [[https://github.co
 Block faces: which faces should we use for which source languages?
 Need to set ~org-src-block-faces~, and we should set it /before/ loading org mode.
 
-#+BEGIN_SRC emacs-lisp :tangle no
-(after! org
-  (setq org-src-block-faces
-        `(("python" (:family ,my/code-family))
-          ("jupyter-python" (:family ,my/code-family))
-          ("jupyter-julia" (:family ,my/code-family))
-          ("emacs-lisp" (:family ,my/code-family)))))
+#+BEGIN_SRC emacs-lisp
+(setq org-src-block-faces
+      `(("python" (:family ,my/code-family))
+        ("jupyter-python" (:family ,my/code-family))
+        ("jupyter-julia" (:family ,my/code-family))
+        ("emacs-lisp" (:family ,my/code-family))
+        ("cavy" (:family ,my/code-family))))
 #+END_SRC
 
 ** Ligatures
@@ -386,12 +396,18 @@ Not necessary if using ~:editor format-all~ (or something like this? I forget wh
 I want to ensure that my compilation buffers show up on the right-hand side. Check the documentation for ~set-popup-rule!~ to find out about all the keys you can use for this.
 
 #+BEGIN_SRC emacs-lisp
-(after! popup
+(after! rustic
   (set-popup-rule! "^\\*rustic"
-    :select t    ;; focus the window after it opens
+    ;; :select t    ;; focus the window after it opens
     ;; :action
-    ;; :side 'right ;; on the rhs of the screen
-    :width 0.5   ;; and fill 50% of it.
+    :side 'right ;; on the rhs of the screen
+    :width 0.45   ;; and fill 45% of it.
+  )
+  (set-popup-rule! "^\\*cargo-"
+    ;; :select t    ;; focus the window after it opens
+    ;; :action
+    :side 'right ;; on the rhs of the screen
+    :width 0.45   ;; and fill 45% of it.
   )
 )
 #+END_SRC
@@ -402,7 +418,11 @@ It is sometimes advised, I think, to abrogate the use of advice. But I thought i
 (defadvice! cargo-run-comint ()
   "After calling `rustic-cargo-run`, enter comint mode and make the buffer editable."
   :after #'rustic-cargo-run
-  (evil-goto-line))
+  (switch-to-buffer-other-window "*rustic-compilation*")
+  (comint-mode))
+  ;; (with-current-buffer (get-buffer "*rustic-compilation*")
+  ;;   (comint-mode))
+  ;; (evil-goto-line))
   ;; (sleep-for 1)
   ;;  (comint-mode)
   ;;  (read-only-mode 0)
@@ -410,6 +430,15 @@ It is sometimes advised, I think, to abrogate the use of advice. But I thought i
   ;;  (evil-append-line))
   ;; (read-only-mode 0))
 #+END_SRC
+
+I’d also like to be able to enjoy a development style that feels a little like Coq development, where I refactor by making a single local edit, then following the error messages until the program type-checks again. To this end, let’s set up a command to start a ~cargo-watch~ session.
+
+#+begin_src emacs-lisp
+(defun my/rustic-cargo-watch ()
+  "Run 'cargo check' for the current project."
+  (interactive)
+  (rustic-run-cargo-command "cargo watch"))
+#+end_src
 
 ** Python
 For some reason, Doom’s Python module is relatively impoverished compared to the Spacemacs Python layer, in that few of the keybindings are evil-ified. I’m trying to make up the difference here.
@@ -468,6 +497,14 @@ I also want the shell to feel less ‘transient.’
     :width 0.5   ;; and fill 50% of it.
     :quit nil
   )
+  (set-popup-rule! "^\\*pytest*"
+    :select nil  ;; don’t auto-focus the window
+                 ;; instead, use the commands defined above
+    ;; :action
+    :side 'right ;; on the rhs of the screen
+    :width 0.5   ;; and fill 50% of it.
+    :quit nil
+  )
 )
 #+END_SRC
 
@@ -493,7 +530,44 @@ Override the default 1.0 environment for my actual Julia version.
 #+BEGIN_SRC emacs-lisp
 (setq lsp-julia-default-environment "~/.julia/environments/v1.5")
 #+END_SRC
+** Cavy
+Cavy is a little programming language I’m working on for fun. We should turn on its major mode while editing Cavy source.
 
+#+begin_src emacs-lisp
+(use-package "~/proj/cavy/cavy-mode/cavy-mode.el")
+(setq cavy-binary "~/proj/cavy/cavy-rs/target/debug/cavy")
+(add-to-list 'auto-mode-alist '("\\.cavy\\'" . cavy-mode))
+
+;; (defun org-babel-execute:cavy (body params)
+;;   (with-output-to-temp-buffer cavy-preview-buffer
+;;     (cavy-compile-program cavy-preview-buffer body)))
+
+(defun org-babel-execute:cavy (body params)
+  (with-output-to-temp-buffer cavy-preview-buffer
+    (cavy-compile-program cavy-preview-buffer body)))
+
+;; Huh, this doesn't seem to do the trick.
+(after! all-the-icons
+  (add-to-list 'all-the-icons-data/file-icon-alist
+               '("cavy" . "")))
+
+#+end_src
+
+And we should set up some evil keybindings for it:
+
+#+begin_src emacs-lisp
+(map! :after cavy-mode
+      :map cavy-mode-map
+      :localleader
+      :prefix ("b" . "build")
+      :desc "Build commands"
+      :desc "Compile"
+      "c" #'cavy-compile-and-preview
+      :desc "Set QASM compile target"
+      "q" (lambda () (interactive) (setq cavy-compile-target 'qasm))
+      :desc "Set LaTeX compile target"
+      "l" (lambda () (interactive) (setq cavy-compile-target 'latex)))
+#+end_src
 ** Company
 Will this make ~company-mode~ work?
 
@@ -542,7 +616,7 @@ All the overridden org-mode variables:
    org-log-done 'time  ;; when finishing a task, log the time
    org-hide-emphasis-markers t
    org-startup-with-latex-preview t
-   org-agenda-files (directory-files my/org-agenda-directory t "\.org$")
+   org-agenda-files (directory-files my/org-agenda-dir t "\.org$")
    org-latex-create-formula-image-program 'imagemagick)
   (setq org-format-latex-options (plist-put org-format-latex-options :scale 1.0))
   ;; Specify the extra latex packages we want to use, and include them.
@@ -550,7 +624,7 @@ All the overridden org-mode variables:
         '("tikz"
           "tikz-cd"
           "physics"     ;; bras and kets, etc.
-          "qcircuit"    ;; take a guess
+          "quantikz"    ;; take a guess
           "cmll"
           "bussproofs"  ;; sequent calculus
           "mathtools")
@@ -562,7 +636,7 @@ All the overridden org-mode variables:
   (set-face-attribute 'org-superstar-header-bullet nil :family "Fira Code")
   ;; If this doesn’t render correctly: it’s a book
   (push '("physical" . "") org-pretty-tags-surrogate-strings)
-  ;; If tihs doesn’t render correctly: it’s a sticky note
+  ;; If this doesn’t render correctly: it’s a sticky note
   (push '("noter" . "") org-pretty-tags-surrogate-strings)
   ;; If this doesn’t render correctly: it’s a pencil
   (push '("noter" . "") org-pretty-tags-surrogate-strings)
@@ -587,10 +661,8 @@ All the overridden org-mode variables:
 
 
 ;; TODO break out a lot of these hooks into some appropriate ‘text-mode’ hook.
-(add-hook 'org-mode-hook
-          '(lambda ()
-             ;; disable flycheck if you're in an agenda file
-             (when (string-prefix-p my/org-agenda-directory (buffer-file-name))
+(add-hook! 'org-mode-hook
+             (when (string-prefix-p my/org-agenda-dir (buffer-file-name))
                (flycheck-mode -1))
              (visual-line-mode) ;; improved wrapping
              (org-indent-mode)
@@ -600,7 +672,7 @@ All the overridden org-mode variables:
              (org-variable-pitch-minor-mode)
              (org-superstar-mode)
              (org-pretty-tags-mode)
-             (add-hook 'post-self-insert-hook #'my/latex-fragment-completion 'append 'local)))
+             (add-hook 'post-self-insert-hook #'my/latex-fragment-completion 'append 'local))
 #+END_SRC
 
 Another thing I want: I often insert drawers of questions, and would like a special keybinding to make that easier.
@@ -673,16 +745,16 @@ This is a great big mess. You really need to figure it out at some point.
 Here are some keybindings for common things you might want to do with ~org-zotxt~. However, note that this is deprecated now that I’m using ~org-roam-bibtex~.
 
 #+BEGIN_SRC emacs-lisp
-(map! :after org
-      :map org-mode-map
-      :leader
-      :prefix ("\"" . "references")
-      :desc "Zotxt: insert reference link"
-      "i" #'org-zotxt-insert-reference-link
-      :desc "Zotxt: update reference link"
-      "u" #'org-zotxt-update-reference-link-at-point
-      :desc "Zotxt: open attachment"
-      "o" #'org-zotxt-open-attachment)
+;; (map! :after org
+;;       :map org-mode-map
+;;       :leader
+;;       :prefix ("\"" . "references")
+;;       :desc "Zotxt: insert reference link"
+;;       "i" #'org-zotxt-insert-reference-link
+;;       :desc "Zotxt: update reference link"
+;;       "u" #'org-zotxt-update-reference-link-at-point
+;;       :desc "Zotxt: open attachment"
+;;       "o" #'org-zotxt-open-attachment)
 #+END_SRC
 
 And these are some similar bindings for ~org-roam-bibtex~. I probably want this to be /globally/ accessible, really, but I’m not sure where to bind it. Looks like ~SPC-z~ is open, but I also want org-specific functions bound to the same cluster.
@@ -771,23 +843,28 @@ I’d also like to be able to pop up a temporary buffer with the abstract of a c
 
 #+BEGIN_SRC emacs-lisp
 ;; Has a mismatched paren or something
-;; (after! ivy-bibtex
-;;   (defun my/org-ref-show-abstract-at-point (&optional thekey)
-;;     "Show abstract at point"
-;;     (interactive)
-;;     (let temp-buffer-name "*abstract*"
-;;          (with-output-to-temp-buffer temp-buffer-name
-;;            (print "The abstract")
-;;            )
-;;          )
-;;     )
-;;   )
+(after! ivy-bibtex
+  (defun my/org-ref-show-abstract-at-point ()
+    "Show abstract at point"
+    (interactive)
+    (let* ((results (org-ref-get-bibtex-key-and-file))
+           (key (car results))
+           (bibfile (cdr results)))
+    (save-excursion
+      (with-temp-buffer
+        (insert-file-contents bibfile)
+        (bibtex-set-dialect (parsebib-find-bibtex-dialect) t)
+        (bibtex-search-entry key)
+        (catch 'done
+          (let ((abstract (s-trim (bibtex-autokey-get-field "abstract"))))
+            (unless (s-blank? abstract)
+              (print abstract)
+              (throw 'done nil))))))))
 
   ;; Add a new hydra head for this action
-  ;; (defhydra+ org-ref-cite-hydra (:color blue)
-  ;;   "_a_: Show abstract"
-  ;;   ("a" my/org-ref-show-abstract-at-point nil))
-  ;;  )
+  ;; (defhydra+ org-ref-cite-hydra ()
+  ;;   ("a" my/org-ref-show-abstract-at-point "Show abstract"))
+  )
 #+END_SRC
 
 I’d also like to use a distinct face for citations.
@@ -809,27 +886,25 @@ I’d also like to use a distinct face for citations.
 (add-hook 'org-roam-mode-hook
           '(lambda ()
              ;; This shouldn't be necessary... Is it?
-             (org-mode)
-             ;; Do I want this in all org buffers?
-             (org-zotxt-mode)))
+             (org-mode)))
 #+END_SRC
 
-I’m also using ~org-roam-server~ to visualize the org graph. So far, these settings are the defaults from the [[https://github.com/org-roam/org-roam-server#Installation][installation instructions]], except that I’ve incremented to port number to something less common, and removed the ~:ensure~ attribute, which Doom Emacs discourages.
+I’m also using ~org-roam-server~ to visualize the org graph. So far, these settings are the defaults from the [[https://github.com/org-roam/org-roam-server#Installation][installation instructions]], except that I’ve incremented to port number to something less common, and removed the ~:ensure~ attribute, which Doom Emacs discourages. Note that I’ve disabled this package for lack of use, so this is commented out for now.
 
 #+BEGIN_SRC emacs-lisp
-(use-package! org-roam-server
-  :config
-  (setq org-roam-server-host "127.0.0.1"
-        org-roam-server-port 8081
-        org-roam-server-authenticate nil
-        org-roam-server-export-inline-images t
-        org-roam-server-serve-files nil
-        org-roam-server-served-file-extensions '("pdf" "mp4" "ogv")
-        org-roam-server-network-poll t
-        org-roam-server-network-arrows nil
-        org-roam-server-network-label-truncate t
-        org-roam-server-network-label-truncate-length 60
-        org-roam-server-network-label-wrap-length 20))
+;; (use-package! org-roam-server
+;;   :config
+;;   (setq org-roam-server-host "127.0.0.1"
+;;         org-roam-server-port 8081
+;;         org-roam-server-authenticate nil
+;;         org-roam-server-export-inline-images t
+;;         org-roam-server-serve-files nil
+;;         org-roam-server-served-file-extensions '("pdf" "mp4" "ogv")
+;;         org-roam-server-network-poll t
+;;         org-roam-server-network-arrows nil
+;;         org-roam-server-network-label-truncate t
+;;         org-roam-server-network-label-truncate-length 60
+;;         org-roam-server-network-label-wrap-length 20))
 #+END_SRC
 
 ** Org-noter
@@ -888,6 +963,7 @@ All right, this is almost working. The major problem that remains is that the Em
               :jupyter_py    ""
               :jupyter_jl    "⛬"
               :emacs_lisp    ""
+              :nix           ""
               :begin_export  "⯮"
               :end_export    "⯬"
               ;; :em_dash       "—"
@@ -908,6 +984,7 @@ All right, this is almost working. The major problem that remains is that the Em
     :jupyter_py    "jupyter-python"
     :jupyter_jl    "jupyter-julia"
     :emacs_lisp    "emacs-lisp"
+    :nix           "nix"
     :begin_quote   "#+BEGIN_QUOTE"
     :begin_quote   "#+begin_quote"
     :end_quote     "#+END_QUOTE"
@@ -965,19 +1042,15 @@ Some pdf viewing preferences: start in ~midnight-minor-mode~, and use theme colo
         (cons (my/theme-color 'fg)
               (my/theme-color 'bg))))
 
-(defun my/blah ()
-  (message "loaded a theme..."))
+(after! pdf-view (my/set-pdf-view-midnight-colors))
 
 ;; Set these colors whenever you load a theme
 (add-hook! 'doom-load-theme-hook
-           :append #'my/set-pdf-view-midnight-colors)
-
-(add-hook! 'doom-load-theme-hook
-           :append #'my/blah)
+           #'my/set-pdf-view-midnight-colors)
 
 ;; Start in midnight mode!
 (add-hook! 'pdf-view-mode-hook
-           :append #'pdf-view-midnight-minor-mode)
+            #'pdf-view-midnight-minor-mode)
 #+END_SRC
 
 We can also read books, and integrate them into our ~org-roam-bibtex~ / ~org-noter~ universe. Let’s set up ~nov.el~:
@@ -1099,4 +1172,5 @@ I’d also like to provide some convenience functions for automatically insertin
   (let ((figure-name (my/inkscape-figures)))
     (insert (concat "[[file:" (my/figure-dir) figure-name ".svg]]"))))
 #+END_SRC
+
 #  LocalWords:  config namespacing zitieren noter

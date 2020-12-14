@@ -55,12 +55,12 @@
 (package! org-superstar)
 (package! org-pretty-tags)
 (package! org-wild-notifier)
-(package! org-roam-server)
-(package! anki-editor)
+;; (package! org-roam-server)  ;; disabled for lack of use
+;; (package! anki-editor)   ;; disabled for lack of use
 ;; (package! fira-code-mode)  ;; seems to not play nicely
                               ;; with ligatures module
 (package! ivy-bibtex)
-(package! zotxt)
+;; (package! zotxt)   ;; disabled for lack of use
 (package! mu4e-alert)
 (package! nov)
 (package! google-translate)
@@ -78,3 +78,19 @@
 ;; +lsp flag
 (package! lsp-julia
   :recipe (:host github :repo "non-jedi/lsp-julia"))
+
+;; ;; The `package!` macro might not be the "correct" way to do this, since it's
+;; ;; meant for handling downloading, but this does seem to work well enough for
+;; ;; now.
+;; (package! cavy-mode
+;;   :recipe (:local-repo ))
+
+(use-package "~/proj/cavy/cavy-mode")
+
+;; NOTE for the time being, emacs-jupyter has a bad interaction with native
+;; comp. See the Github issue at:
+;; https://github.com/nnicandro/emacs-jupyter/issues/297
+;; NOTE This is *extra* broken right now
+;; (package! jupyter :recipe (:no-native-compile t))
+
+;; (package! ob-async :recipe (:no-native-compile t))
