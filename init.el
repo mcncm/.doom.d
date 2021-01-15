@@ -37,6 +37,7 @@
        ;;hydra
        ;;indent-guides     ; highlighted indent columns
        (ligatures
+        +fira
         +extra)             ;; added mcncm
                              ;; TODO how does this relate to pretty-code?
        ;;minimap           ; show a map of the code on the side
@@ -74,7 +75,7 @@
        (dired +icons)             ; making dired pretty [functional]
        electric          ; smarter, keyword-based electric-indent
        ;;ibuffer         ; interactive buffer management
-       undo              ; persistent, smarter undo for your inevitable mistakes
+       (undo +fu)              ; persistent, smarter undo for your inevitable mistakes
        vc                ; version-control and Emacs, sitting in a tree
 
        :term

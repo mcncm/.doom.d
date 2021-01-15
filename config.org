@@ -369,6 +369,7 @@ Need to set ~org-src-block-faces~, and we should set it /before/ loading org mod
 (setq org-src-block-faces
       `(("python" (:family ,my/code-family))
         ("jupyter-python" (:family ,my/code-family))
+        ("rust" (:family ,my/code-family))
         ("jupyter-julia" (:family ,my/code-family))
         ("emacs-lisp" (:family ,my/code-family))
         ("cavy" (:family ,my/code-family))))
@@ -384,13 +385,17 @@ This block is currently excluded (~:tangle no~) because ~fira-code-mode~ seems t
 (add-hook 'prog-mode-hook 'fira-code-mode)
 #+END_SRC
 
+Let’s set the disabled ligatures for the ~+ligatures~ package.
+#+begin_src emacs-lisp
+
+#+end_src
 * Programming
 ** Rust
 Not necessary if using ~:editor format-all~ (or something like this? I forget what the setting was called), but that seems not to work. In any case, I think I might prefer ~rust-mode~ to ~rustic~. I might consider going back, even within Doom.
 
 #+BEGIN_SRC emacs-lisp
-(setq rustic-lsp-server 'rust-analyzer
-      rustic-format-on-save t)
+(after! rustic
+    (setq rustic-format-on-save t))
 #+END_SRC
 
 I want to ensure that my compilation buffers show up on the right-hand side. Check the documentation for ~set-popup-rule!~ to find out about all the keys you can use for this.
@@ -402,6 +407,7 @@ I want to ensure that my compilation buffers show up on the right-hand side. Che
     ;; :action
     :side 'right ;; on the rhs of the screen
     :width 0.45   ;; and fill 45% of it.
+    :quit nil
   )
   (set-popup-rule! "^\\*cargo-"
     ;; :select t    ;; focus the window after it opens
@@ -434,12 +440,32 @@ It is sometimes advised, I think, to abrogate the use of advice. But I thought i
 I’d also like to be able to enjoy a development style that feels a little like Coq development, where I refactor by making a single local edit, then following the error messages until the program type-checks again. To this end, let’s set up a command to start a ~cargo-watch~ session.
 
 #+begin_src emacs-lisp
-(defun my/rustic-cargo-watch ()
-  "Run 'cargo check' for the current project."
-  (interactive)
-  (rustic-run-cargo-command "cargo watch"))
+(setq my/rustic-cargo-check-on-save t)
+
+(defadvice! rustic-cargo-check-on-save ()
+  :after #'rustic-after-save-hook
+  (if my/rustic-cargo-check-on-save (rustic-cargo-check)))
 #+end_src
 
+#+BEGIN_SRC emacs-lisp
+(defmacro my/toggle (var)
+  `(lambda () (interactive)
+     (progn
+       (setq ,var (not ,var))
+       (message (concat (symbol-name ',var)
+                        " is now "
+                        ;; How are you supposed to format booleans in Elisp?
+                        (if ,var "t" "nil"))))))
+
+(map! :after rustic
+      :map rustic-mode-map
+      :localleader
+      :prefix ("s" . "on-save")
+      :desc "Toggle format on save"
+      "f" (my/toggle rustic-format-on-save)
+      :desc "Toggle cargo-check on save"
+      "c" (my/toggle my/rustic-cargo-check-on-save))
+#+END_SRC
 ** Python
 For some reason, Doom’s Python module is relatively impoverished compared to the Spacemacs Python layer, in that few of the keybindings are evil-ified. I’m trying to make up the difference here.
 
@@ -543,8 +569,12 @@ Cavy is a little programming language I’m working on for fun. We should turn o
 ;;     (cavy-compile-program cavy-preview-buffer body)))
 
 (defun org-babel-execute:cavy (body params)
-  (with-output-to-temp-buffer cavy-preview-buffer
-    (cavy-compile-program cavy-preview-buffer body)))
+  "Orgmode Babel Cavy evaluate function for `BODY' with `PARAMS'."
+  (let* ((cmd "cavy /dev/stdin -o /dev/stdout --target latex"))
+    (org-babel-eval cmd body)))
+
+;; Syntax highlighting in exported code
+;; (push '(cavy "rust") org-latex-minted-langs)
 
 ;; Huh, this doesn't seem to do the trick.
 (after! all-the-icons
@@ -617,20 +647,19 @@ All the overridden org-mode variables:
    org-hide-emphasis-markers t
    org-startup-with-latex-preview t
    org-agenda-files (directory-files my/org-agenda-dir t "\.org$")
-   org-latex-create-formula-image-program 'imagemagick)
+   org-latex-create-formula-image-program 'imagemagick
+   org-latex-pdf-process '("latexmk -shell-escape -bibtex -pdf %f"))
   (setq org-format-latex-options (plist-put org-format-latex-options :scale 1.0))
-  ;; Specify the extra latex packages we want to use, and include them.
-  (setq org-latex-packages-extra
+  (setq my/org-latex-packages-extra
         '("tikz"
-          "tikz-cd"
+          ;; "tikz-cd"
           "physics"     ;; bras and kets, etc.
-          "quantikz"    ;; take a guess
           "cmll"
           "bussproofs"  ;; sequent calculus
           "mathtools")
         ;; This assumes that there was nothing in this variable to begin with!
         org-latex-packages-alist (mapcar (lambda (package) `("" ,package t))
-                                         org-latex-packages-extra))
+                                         my/org-latex-packages-extra))
 
   ;; This will render the bullets more correctly!
   (set-face-attribute 'org-superstar-header-bullet nil :family "Fira Code")
@@ -674,6 +703,15 @@ All the overridden org-mode variables:
              (org-pretty-tags-mode)
              (add-hook 'post-self-insert-hook #'my/latex-fragment-completion 'append 'local))
 #+END_SRC
+
+A utility function to clear LaTeX previews. It might be nice to make this a native Emacs function instead of shelling out.
+
+#+begin_src emacs-lisp
+(defun my/clear-latex-preview-images ()
+  (interactive)
+  (shell-command
+   (concat "rm " org-preview-latex-image-directory "*")))
+#+end_src
 
 Another thing I want: I often insert drawers of questions, and would like a special keybinding to make that easier.
 
@@ -793,6 +831,7 @@ Here are some settings from the not-yet-merged ~biblio~ module, which I have in 
 We have to ensure that we open pdfs by looking up the bibliography ~file~ field, rather than by looking in a pdf directory.
 #+BEGIN_SRC emacs-lisp
 (after! org-roam-bibtex
+  ;; The following is probably not right.
   (setq! org-ref-get-pdf-filename-function 'org-ref-get-pdf-filename-helm-bibtex)
   (setq! orb-persp-project `("notes" . ,+biblio-notes-path)))
 #+END_SRC
@@ -977,9 +1016,10 @@ All right, this is almost working. The major problem that remains is that the Em
     :list_property "::"
     :results       "#+RESULTS:"
     :end           ":END:"
+    :end           ":end:"
     :options       "#+OPTIONS:"
     :latex_class   "#+LATEX_CLASS:"
-    :latex_header  "#+LATEX_HEADER:"
+    ;; :latex_header  "#+LATEX_HEADER:"
     :beamer_header "#+BEAMER_HEADER:"
     :jupyter_py    "jupyter-python"
     :jupyter_jl    "jupyter-julia"
