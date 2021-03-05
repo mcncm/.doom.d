@@ -55,7 +55,9 @@ This is just the block at the top of the ~config.el~ that ships with Doom Emacs,
 ;; There are two ways to load a theme. Both assume the theme is installed and
 ;; available. You can either set `doom-theme' or manually load a theme with the
 ;; `load-theme' function. This is the default:
-(setq doom-theme 'ewal-doom-one)
+;;(setq doom-theme 'ewal-doom-one)
+
+;; NOTE doom-theme is set below, after the banner configuration.
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
@@ -129,13 +131,21 @@ I’ve just encountered an image scaling issue that sometimes makes inline raste
 (setq image-scaling-factor 1)
 #+end_src
 
+By default, Doom uses a variable-pitch font for treemacs. Let’s fix that. However, this doesn’t fully work, as it gets reset when you change themes. It’s also not clear how to use a /specific/ font of choice. See [[https://github.com/hlissner/doom-emacs/issues/1551][this issue]].
+#+begin_src emacs-lisp
+(after! doom-themes-ext-treemacs
+  (setq doom-themes-treemacs-enable-variable-pitch nil))
+#+end_src
+
 ** Some extra bindings
-I’m always turning electric quotes on and off, so it helps to have this bound for quick access. It might be even better to set up the package to understand when it’s in a source block and so on.
+I’m always turning electric quotes on and off, so it helps to have this bound for quick access. It might be even better to set up the package to understand when it’s in a source block and so on. Let’s toggle treemacs, too.
 #+BEGIN_SRC emacs-lisp
 (map! :leader
       :prefix ("t")
       :desc "Electric quote local mode"
-      "q" #'electric-quote-mode)
+      "q" #'electric-quote-mode
+      :desc "Treemacs"
+      "t" #'treemacs)
 #+END_SRC
 
 ** “Verbal” bindings and tidbits
@@ -281,7 +291,12 @@ Let’s run this when we change themes, so it’s colored correctly. I guess tha
 #+BEGIN_SRC emacs-lisp
 (add-hook! 'doom-load-theme-hook #'my/recolor-banner)
 #+END_SRC
-
+** Finally, load a theme
+We put this off until now because we had to set that hook. Otherwise the splash image would not be colored properly on startup.
+#+begin_src emacs-lisp
+(load-theme 'ewal-doom-one t)
+#+end_src
+Honestly, this slows down startup by a little bit. Maybe half of a second. Does look cool, though.
 ** Odds and ends
 See ~all-the-icons~ major mode icon in modeline
 #+BEGIN_SRC emacs-lisp
@@ -370,11 +385,12 @@ Need to set ~org-src-block-faces~, and we should set it /before/ loading org mod
       `(("python" (:family ,my/code-family))
         ("jupyter-python" (:family ,my/code-family))
         ("rust" (:family ,my/code-family))
+        ("flam" (:family ,my/code-family))
         ("jupyter-julia" (:family ,my/code-family))
         ("emacs-lisp" (:family ,my/code-family))
-        ("cavy" (:family ,my/code-family))))
+        ("cavy" (:family ,my/code-family))
+        ("silq" (:family ,my/code-family))))
 #+END_SRC
-
 ** Ligatures
 Fira Code is a pretty nice programming font, and I like its ligatures and special characters. But some of them, like rendering ~x~ as a multiplication sign, are a little ugly.
 
@@ -406,14 +422,14 @@ I want to ensure that my compilation buffers show up on the right-hand side. Che
     ;; :select t    ;; focus the window after it opens
     ;; :action
     :side 'right ;; on the rhs of the screen
-    :width 0.45   ;; and fill 45% of it.
+    :width 0.40   ;; and fill 45% of it.
     :quit nil
   )
   (set-popup-rule! "^\\*cargo-"
     ;; :select t    ;; focus the window after it opens
     ;; :action
     :side 'right ;; on the rhs of the screen
-    :width 0.45   ;; and fill 45% of it.
+    :width 0.40   ;; and fill 45% of it.
   )
 )
 #+END_SRC
@@ -447,6 +463,29 @@ I’d also like to be able to enjoy a development style that feels a little like
   (if my/rustic-cargo-check-on-save (rustic-cargo-check)))
 #+end_src
 
+We also need to add a workaround for the [[https://github.com/rust-lang/rust-clippy/issues/4612][clippy-after-check]] bug. The easiest fix is to touch every file in the project. This version of the solution is a little incomplete; it should try to find the crate root.
+
+#+begin_src emacs-lisp
+(defadvice! rustic-clippy-workaround ()
+  :before #'rustic-cargo-clippy
+  (shell-command "touch **.rs"))
+#+end_src
+
+A helpful little function to add dependencies with ~cargo-add~
+
+#+begin_src emacs-lisp
+(defun my/cargo-add ()
+    (interactive)
+  (shell-command
+   (concat "cargo add "
+           (read-string
+            "cargo-add: "
+            (my/crate-at-point)))))
+
+(defun my/crate-at-point ()
+  (s-replace "_" "-" (current-word)))
+#+end_src
+
 #+BEGIN_SRC emacs-lisp
 (defmacro my/toggle (var)
   `(lambda () (interactive)
@@ -460,6 +499,8 @@ I’d also like to be able to enjoy a development style that feels a little like
 (map! :after rustic
       :map rustic-mode-map
       :localleader
+      :desc "Add dependency"
+      "d" (lambda () (interactive) (my/cargo-add))
       :prefix ("s" . "on-save")
       :desc "Toggle format on save"
       "f" (my/toggle rustic-format-on-save)
@@ -561,12 +602,9 @@ Cavy is a little programming language I’m working on for fun. We should turn o
 
 #+begin_src emacs-lisp
 (use-package "~/proj/cavy/cavy-mode/cavy-mode.el")
-(setq cavy-binary "~/proj/cavy/cavy-rs/target/debug/cavy")
+(setq cavy-binary "~/proj/cavy/cavy-lang/target/debug/cavyc")
 (add-to-list 'auto-mode-alist '("\\.cavy\\'" . cavy-mode))
-
-;; (defun org-babel-execute:cavy (body params)
-;;   (with-output-to-temp-buffer cavy-preview-buffer
-;;     (cavy-compile-program cavy-preview-buffer body)))
+(add-to-list 'auto-mode-alist '("\\.cv\\'" . cavy-mode))
 
 (defun org-babel-execute:cavy (body params)
   "Orgmode Babel Cavy evaluate function for `BODY' with `PARAMS'."
@@ -593,14 +631,35 @@ And we should set up some evil keybindings for it:
       :desc "Build commands"
       :desc "Compile"
       "c" #'cavy-compile-and-preview
+      :desc "Lower to MIR"
+      "m" (lambda () (interactive) (setq cavy-compile-target 'mir))
       :desc "Set QASM compile target"
       "q" (lambda () (interactive) (setq cavy-compile-target 'qasm))
       :desc "Set LaTeX compile target"
       "l" (lambda () (interactive) (setq cavy-compile-target 'latex)))
 #+end_src
+** Silq
+Let’s get some block-evaluation going on for Silq.
+#+begin_src emacs-lisp
+(defun org-babel-execute:silq (body params)
+  "Orgmode Babel Silq evaluate function for `BODY' with `PARAMS'."
+  (let* ((cmd "TMP=$(mktemp --suffix=.slq); cat > $TMP; ~/.local/bin/silq $TMP --run 2>&1; rm $TMP"))
+    (org-babel-eval cmd body)))
+#+end_src
+
+And a simple major mode, which appears to be a prerequisite for fontification of Org source blocks.
+#+begin_src emacs-lisp
+(define-derived-mode silq-mode prog-mode "Silq"
+  "Major mode for editing Silq code."
+
+  ;; Fontification
+  ;; (setq-local font-lock-defaults '((silq-font-lock-keywords)))
+  )
+#+end_src
+
 ** Company
 Will this make ~company-mode~ work?
-
+ for.
 #+BEGIN_SRC emacs-lisp
 (set-company-backend!
   '(c-mode
@@ -626,7 +685,7 @@ Will this make ~company-mode~ work?
 :PROPERTIES:
 :END:
 A little helper function for completing latex fragments. Some notes:
-+ Newlines aren’t working. It might be that you’re supposed to use a "character class" like ~[:space:]~ or ~\s-~, but neither of these
++ Newlines aren’t working. It might be that you’re supposed to use a "character class" like ~[:space:]~ or ~\s~, but neither of these
 + ~looking-back~ is known to be quite slow. See [[https://emacs.stackexchange.com/a/12744][this answer]].
 
 #+BEGIN_SRC emacs-lisp
@@ -661,8 +720,9 @@ All the overridden org-mode variables:
         org-latex-packages-alist (mapcar (lambda (package) `("" ,package t))
                                          my/org-latex-packages-extra))
 
-  ;; This will render the bullets more correctly!
-  (set-face-attribute 'org-superstar-header-bullet nil :family "Fira Code")
+  ;; FIXME This will render the bullets more correctly!
+  ;; NOTE This isn’t working right now for some reason
+  ;; (set-face-attribute 'org-superstar-header-bullet nil :family "Fira Code")
   ;; If this doesn’t render correctly: it’s a book
   (push '("physical" . "") org-pretty-tags-surrogate-strings)
   ;; If this doesn’t render correctly: it’s a sticky note
@@ -695,11 +755,13 @@ All the overridden org-mode variables:
                (flycheck-mode -1))
              (visual-line-mode) ;; improved wrapping
              (org-indent-mode)
-             (olivetti-mode)
              (electric-quote-mode) ;; replace “ and ”.
              (display-line-numbers-mode -1)
-             (org-variable-pitch-minor-mode)
-             (org-superstar-mode)
+             (if (not (eq major-mode 'treemacs-mode))
+                 (progn
+                  (olivetti-mode)
+                  ;; (org-superstar-mode)
+                  (org-variable-pitch-minor-mode)))
              (org-pretty-tags-mode)
              (add-hook 'post-self-insert-hook #'my/latex-fragment-completion 'append 'local))
 #+END_SRC
@@ -921,11 +983,6 @@ I’d also like to use a distinct face for citations.
   (setq-default org-roam-directory (concat org-directory "/roam"))
   (after! deft
     (setq-default deft-directory org-roam-directory)))
-
-(add-hook 'org-roam-mode-hook
-          '(lambda ()
-             ;; This shouldn't be necessary... Is it?
-             (org-mode)))
 #+END_SRC
 
 I’m also using ~org-roam-server~ to visualize the org graph. So far, these settings are the defaults from the [[https://github.com/org-roam/org-roam-server#Installation][installation instructions]], except that I’ve incremented to port number to something less common, and removed the ~:ensure~ attribute, which Doom Emacs discourages. Note that I’ve disabled this package for lack of use, so this is commented out for now.
@@ -965,7 +1022,6 @@ Let’s also set a key to kill the noter session.
       "Kill noter session"
       "k" #'org-noter-kill-session)
 #+END_SRC
-
 
 We also want closing the Noter document buffer to quit the Noter session. This seems to actually be a /default/ behavior, since ~q~ is bound to ~org-noter-kill-session~ in ~org-noter-doc-mode~. But in practice this key just closes the doc buffer; it doesn’t remove the notes window as well.
 
@@ -1122,11 +1178,13 @@ position."
 #+END_SRC
 
 * Email
-Here are the public parts of my email configuration. First, we’ll import the bits that I want to keep private.
+Here are the public parts of my email configuration. First, we’ll import the bits that I want to keep private. Also, set any variables here that you’d like to be after ~mu4e~ loads.
 
 #+BEGIN_SRC emacs-lisp
 (after! mu4e
-  (load! "./mu4e-config.el"))
+  (load! "./mu4e-config.el")
+  ;; get new email every 5 minutes
+  (setq mu4e-update-interval 300))
 #+END_SRC
 
 These settings specify how to retrieve mail.
@@ -1141,7 +1199,7 @@ These settings specify how to retrieve mail.
  mu4e-confirm-quit nil)
 #+END_SRC
 
-I want some better defaults for formatting (particularly HTML) emails.
+I want some better defaults for formatting (particularly HTML) emails, and to automatically check emails
 #+BEGIN_SRC emacs-lisp
 (setq org-msg-options
       "html-postamble:nil toc:nil author:nil email:nil \\n:t -:t ^:{} H:5 num:0")

@@ -85,7 +85,7 @@
 ;; (package! cavy-mode
 ;;   :recipe (:local-repo ))
 
-(use-package "~/proj/cavy/cavy-mode")
+(use-package "~/proj/cavy/cavy-mode/cavy-mode.el")
 
 ;; NOTE for the time being, emacs-jupyter has a bad interaction with native
 ;; comp. See the Github issue at:
