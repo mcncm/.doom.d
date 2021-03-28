@@ -39,7 +39,7 @@
        (ligatures
         +fira
         +extra)             ;; added mcncm
-                             ;; TODO how does this relate to pretty-code?
+       ;; TODO how does this relate to pretty-code?
        ;;minimap           ; show a map of the code on the side
        modeline          ; snazzy, Atom-inspired modeline, plus API
        nav-flash         ; blink cursor line after big motions
@@ -60,13 +60,13 @@
        (evil +everywhere); come to the dark side, we have cookies
        ;;file-templates    ; auto-snippets for empty files
        fold              ; (nigh) universal code folding
-       ;;(format +onsave)  ; automated prettiness
-                           ; seems not to work with native comp?
+       (format +onsave)  ; automated prettiness
+                                        ; seems not to work with native comp?
        ;;god               ; run Emacs commands without modifier keys
-       ;;lispy             ; vim for lisp, for people who don't like vim
+       lispy             ; vim for lisp, for people who don't like vim
        ;;multiple-cursors  ; editing in many places at once
        ;;objed             ; text object editing for the innocent
-       ;;parinfer          ; turn lisp into python, sort of
+       parinfer          ; turn lisp into python, sort of
        ;;rotate-text       ; cycle region at point between text candidates
        snippets          ; my elves. They type so I don't have to
        ;;word-wrap         ; soft wrapping with language-aware indent
@@ -75,7 +75,7 @@
        (dired +icons)             ; making dired pretty [functional]
        electric          ; smarter, keyword-based electric-indent
        ;;ibuffer         ; interactive buffer management
-       (undo +fu)              ; persistent, smarter undo for your inevitable mistakes
+       (undo +tree)              ; persistent, smarter undo for your inevitable mistakes
        vc                ; version-control and Emacs, sitting in a tree
 
        :term
@@ -92,9 +92,9 @@
        :tools
        ;;ansible
        ;;biblio            ; mcncm - this module is not documented!
-                           ; It adds bibtex-completion and ivy-bibtex.
-                           ; You should consider using the branch that incorporates
-                           ; org-bibtex
+                                        ; It adds bibtex-completion and ivy-bibtex.
+                                        ; You should consider using the branch that incorporates
+                                        ; org-bibtex
        ;;debugger          ; FIXME stepping through code, to help you add bugs
        ;;direnv
        ;;docker
@@ -120,10 +120,10 @@
        ;;upload            ; map local to remote projects via ssh/ftp
 
        :lang
-       (agda +local)        ; types of types of types of types...
+       ;; (agda +local)        ; types of types of types of types...
        (cc +lsp)                ; C/C++/Obj-C madness
        ;; (clojure +lsp)           ; java with a lisp
-       ;; common-lisp       ; if you've seen one lisp, you've seen them all
+       common-lisp       ; if you've seen one lisp, you've seen them all
        coq               ; proofs-as-programs
        ;;crystal           ; ruby at the speed of c
        ;;csharp            ; unity, .NET, and mono shenanigans
@@ -139,11 +139,11 @@
        ;;fstar             ; (dependent) types and (monadic) effects and Z3
        ;;gdscript          ; the language you waited for
        ;;(go +lsp)         ; the hipster dialect
-       (haskell
-        ;; +dante
-        +lsp)  ; a language that's lazier than I am
+       ;;(haskell
+       ;; +dante
+       ;;+lsp)  ; a language that's lazier than I am
        ;;hy                ; readability of scheme w/ speed of python
-       idris             ;
+       ;;idris             ;
        json              ; At least it ain't XML
        ;;(java +meghanada) ; the poster child for carpal tunnel syndrome
        javascript        ; all(hope(abandon(ye(who(enter(here))))))
@@ -153,7 +153,7 @@
         +lsp
         +fold
         +latexmk)             ; writing papers in Emacs has never been so fun
-       lean
+       ;;lean
        ;;factor
        ;;ledger            ; an accounting system in Emacs
        ;;lua               ; one-based indices? one-based indices
@@ -163,7 +163,7 @@
        ;; ocaml             ; an objective camel
        (org +roam
             +journal
-            ;; +jupyter  ; disabled for now; doesn't build correctly
+            +jupyter  ; disabled for now; doesn't build correctly
             ;; +present       ; export to beamer, reveal.js,…
             +noter)    ; organize your plain life in plain text
        ;;php               ; perl's insecure younger brother
@@ -205,8 +205,8 @@
 
        :private
        biblio              ; custom biblio with org-bibtex as discussed mainly
-                           ; in this issue:
-                           ; https://github.com/hlissner/doom-emacs/pull/2888
+                                        ; in this issue:
+                                        ; https://github.com/hlissner/doom-emacs/pull/2888
        )
 
 ;; Other global settings that must be set early.

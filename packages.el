@@ -52,7 +52,6 @@
 (package! ewal-doom-themes)
 (package! olivetti)
 (package! org-variable-pitch)
-(package! org-superstar)
 (package! org-pretty-tags)
 (package! org-wild-notifier)
 ;; (package! org-roam-server)  ;; disabled for lack of use
@@ -64,6 +63,9 @@
 (package! mu4e-alert)
 (package! nov)
 (package! google-translate)
+
+;; Mathematica in Org-mode
+;; (package! wolfram-mode)
 
 ;; It seems that these themes aren’t Doom-compatible.
 ;; (package! modus-vivendi-theme)

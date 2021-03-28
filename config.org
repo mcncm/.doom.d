@@ -361,6 +361,7 @@ Some sensible org theme things. I think I snagged these from [[https://github.co
     ;; Why does 0.8 seem to be about right? Well, it’s the same as the ratio
     ;; between my/code-size and my/text-size. That’s probably a hint as to
     ;; what’s going on.
+    `(org-latex-and-related :family ,my/code-family :height 0.8)
     `(org-code :family ,my/code-family :height 0.8)
     `(org-block-begin-line :height 1.0) ;; What do I have to do with this
     `(org-block :family ,my/code-family :height 0.8)
@@ -385,7 +386,6 @@ Need to set ~org-src-block-faces~, and we should set it /before/ loading org mod
       `(("python" (:family ,my/code-family))
         ("jupyter-python" (:family ,my/code-family))
         ("rust" (:family ,my/code-family))
-        ("flam" (:family ,my/code-family))
         ("jupyter-julia" (:family ,my/code-family))
         ("emacs-lisp" (:family ,my/code-family))
         ("cavy" (:family ,my/code-family))
@@ -409,7 +409,7 @@ Let’s set the disabled ligatures for the ~+ligatures~ package.
 ** Rust
 Not necessary if using ~:editor format-all~ (or something like this? I forget what the setting was called), but that seems not to work. In any case, I think I might prefer ~rust-mode~ to ~rustic~. I might consider going back, even within Doom.
 
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no
 (after! rustic
     (setq rustic-format-on-save t))
 #+END_SRC
@@ -597,9 +597,24 @@ Override the default 1.0 environment for my actual Julia version.
 #+BEGIN_SRC emacs-lisp
 (setq lsp-julia-default-environment "~/.julia/environments/v1.5")
 #+END_SRC
+** Mathematica
+I’d like to use Mathematica within Org-mode. This first pass is taken from [[https://rgoswami.me/posts/org-mathematica/][Rohit Goswami]].
+#+begin_src emacs-lisp :tangle no
+;; Load mathematica from contrib
+(org-babel-do-load-languages 'org-babel-load-languages
+                             (append org-babel-load-languages
+                                     '((mathematica . t))
+                                     ))
+;; Sanitize output and deal with paths
+(setq org-babel-mathematica-command "~/.local/bin/mash")
+;; Font-locking
+(after! ob-mathematica
+  (add-to-list 'org-src-lang-modes '("mathematica" . wolfram)))
+;; For wolfram-mode
+(setq mathematica-command-line "~/.local/bin/mash")
+#+end_src
 ** Cavy
 Cavy is a little programming language I’m working on for fun. We should turn on its major mode while editing Cavy source.
-
 #+begin_src emacs-lisp
 (use-package "~/proj/cavy/cavy-mode/cavy-mode.el")
 (setq cavy-binary "~/proj/cavy/cavy-lang/target/debug/cavyc")
@@ -627,16 +642,37 @@ And we should set up some evil keybindings for it:
 (map! :after cavy-mode
       :map cavy-mode-map
       :localleader
-      :prefix ("b" . "build")
-      :desc "Build commands"
-      :desc "Compile"
+      :desc "compile"
       "c" #'cavy-compile-and-preview
-      :desc "Lower to MIR"
-      "m" (lambda () (interactive) (setq cavy-compile-target 'mir))
-      :desc "Set QASM compile target"
-      "q" (lambda () (interactive) (setq cavy-compile-target 'qasm))
-      :desc "Set LaTeX compile target"
-      "l" (lambda () (interactive) (setq cavy-compile-target 'latex)))
+      :desc "toggle debug mode"
+      "d" (my/toggle cavy-debug)
+      
+      (:prefix ("t" . "target")
+       :desc "set QASM compile target"
+       "q" (lambda () (interactive) (setq cavy-compile-target 'qasm))
+       :desc "set LaTeX compile target"
+       "l" (lambda () (interactive) (setq cavy-compile-target 'latex))
+       )
+      
+      (:prefix ("p" . "phase")
+       :desc "parse"
+       "a" (lambda () (interactive) (setq cavy-phase "parse"))
+       :desc "lower to MIR"
+       "m" (lambda () (interactive) (setq cavy-phase "typecheck"))
+       :desc "lower and optimize"
+       "o" (lambda () (interactive) (setq cavy-phase "optimize"))
+       :desc "compile object code"
+       "c" (lambda () (interactive (setq cavy-phase 'nil)))
+       )
+
+      (:prefix ("o" . "optimization")
+       :desc "toggle constant propagation"
+       "c" (my/toggle cavy-comptime)
+       "0" (lambda () (interactive (setq cavy-opt-level 0)))
+       "1" (lambda () (interactive (setq cavy-opt-level 1)))
+       "2" (lambda () (interactive (setq cavy-opt-level 2)))
+       "3" (lambda () (interactive (setq cavy-opt-level 3))))
+      )
 #+end_src
 ** Silq
 Let’s get some block-evaluation going on for Silq.
@@ -707,10 +743,13 @@ All the overridden org-mode variables:
    org-startup-with-latex-preview t
    org-agenda-files (directory-files my/org-agenda-dir t "\.org$")
    org-latex-create-formula-image-program 'imagemagick
-   org-latex-pdf-process '("latexmk -shell-escape -bibtex -pdf %f"))
+   org-latex-pdf-process '("latexmk  -shell-escape -bibtex -pdf %f")
+   org-latex-listings 'minted)
+  (setq org-highlight-latex-and-related '(latex))
   (setq org-format-latex-options (plist-put org-format-latex-options :scale 1.0))
   (setq my/org-latex-packages-extra
         '("tikz"
+          "minted"
           ;; "tikz-cd"
           "physics"     ;; bras and kets, etc.
           "cmll"
