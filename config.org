@@ -248,11 +248,20 @@ This is my Doom banner, or splash screen icon. It's chosen randomly from a direc
 #+BEGIN_SRC emacs-lisp
 (setq +doom-dashboard-banner-dir "~/.doom.d/banner"
       ;; Now pick a random banner!
-      my/banner-template-file (seq-random-elt
-                               (directory-files
-                                +doom-dashboard-banner-dir t
-                                directory-files-no-dot-files-regexp))
-      +doom-dashboard-banner-file "banner.svg")
+      ;; my/banner-template-file (concat
+      ;;                          +doom-dashboard-banner-dir "/"
+      ;;                          (seq-random-elt
+      ;;                          (directory-files
+      ;;                           +doom-dashboard-banner-dir t
+      ;;                           directory-files-no-dot-files-regexp)))
+      my/banner-template-file (concat
+                               +doom-dashboard-banner-dir "/"
+                               "EmackPartialEdit.png")
+      +doom-dashboard-banner-file
+      (let
+          ((ext
+            (file-name-extension my/banner-template-file)))
+        (concat +doom-dashboard-banner-dir "/banner." ext)))
 #+END_SRC
 
 A fun little trick and terrible hack to recolor the banner. Maybe I should try ~async-shell-command~ rather than ~shell-command~? We can even set an override color on a per-theme basis.
@@ -268,23 +277,28 @@ A fun little trick and terrible hack to recolor the banner. Maybe I should try ~
 
 (defun my/theme-banner-color ()
   "Get the preferred banner color for the current `doom-theme` as a hex code."
-    (let* ((pair (seq-find
-                 (lambda (pair) (eq (car pair) doom-theme))
-                 my/theme-banner-color-overrides))
-          (color (if pair (cdr pair) my/banner-color-default)))
-      (my/theme-color color)))
+  (let* ((pair (seq-find
+                (lambda (pair) (eq (car pair) doom-theme))
+                my/theme-banner-color-overrides))
+         (color (if pair (cdr pair) my/banner-color-default)))
+    (my/theme-color color)))
 
 (defun my/recolor-banner ()
   "Recolor the banner image to the preferred color for the current theme."
   (shell-command
-   (concat "sed -e \""
-           ;; replace black with the banner color
-           "s/#000000/" (my/theme-banner-color) "/g" "; "
-           ;; replace white with background color
-           "s/#FFFFFF/" (my/theme-color 'bg) "/g" "\" "
-           my/banner-template-file " > "
-           +doom-dashboard-banner-dir "/" +doom-dashboard-banner-file)))
+   (if (eq (file-name-extension my/banner-template-file) "svg")
+       (concat "sed -e \""
+               ;; replace black with the banner color
+               "s/#000000/" (my/theme-banner-color) "/g" "; "
+               ;; replace white with background color
+               "s/#FFFFFF/" (my/theme-color 'bg) "/g" "\" "
+               my/banner-template-file " > "
+               +doom-dashboard-banner-dir "/" +doom-dashboard-banner-file)
+     (concat "cp "
+             my/banner-template-file " " +doom-dashboard-banner-file))))
 #+END_SRC
+
+(shell-command(concat "cp " my/banner-template-file " " +doom-dashboard-banner-file) )
 
 Let’s run this when we change themes, so it’s colored correctly. I guess that was a little ugly, since ~my/banner-template-file~ is an absolute path, while ~+doom-dashboard-banner-file~ is relative to ~+doom-dashboard-banner-dir~.
 
@@ -421,17 +435,18 @@ I want to ensure that my compilation buffers show up on the right-hand side. Che
   (set-popup-rule! "^\\*rustic"
     ;; :select t    ;; focus the window after it opens
     ;; :action
-    :side 'right ;; on the rhs of the screen
+    :side 'bottom ;; on the rhs of the screen
     :width 0.40   ;; and fill 45% of it.
     :quit nil
-  )
+    )
   (set-popup-rule! "^\\*cargo-"
     ;; :select t    ;; focus the window after it opens
     ;; :action
-    :side 'right ;; on the rhs of the screen
+    :side 'bottom ;; on the rhs of the screen
     :width 0.40   ;; and fill 45% of it.
+    :quit nil
+    )
   )
-)
 #+END_SRC
 
 It is sometimes advised, I think, to abrogate the use of advice. But I thought it would be much nicer to use this approach here than to define an entirely /new/ function and to bind it to some unused key or to override the binding for  ~rustic-cargo-run~. This is a much simpler version of the function ~cargo-comint-run~  appearing in my Spacemacs config.
@@ -471,6 +486,13 @@ We also need to add a workaround for the [[https://github.com/rust-lang/rust-cli
   (shell-command "touch **.rs"))
 #+end_src
 
+#+begin_src emacs-lisp
+(defun my/rustic-cargo-build ()
+  "Build, but for the whole workspace"
+  (interactive)
+  (rustic-run-cargo-command "cargo build --workspace"))
+#+end_src
+
 A helpful little function to add dependencies with ~cargo-add~
 
 #+begin_src emacs-lisp
@@ -501,11 +523,16 @@ A helpful little function to add dependencies with ~cargo-add~
       :localleader
       :desc "Add dependency"
       "d" (lambda () (interactive) (my/cargo-add))
-      :prefix ("s" . "on-save")
+      ;; override cargo-build to use the `--workspace` flag
+      ;; :desc "cargo build"
+      ;; "d" 'my/rustic-cargo-build
+      :prefix ("T" . "toggle")
       :desc "Toggle format on save"
       "f" (my/toggle rustic-format-on-save)
       :desc "Toggle cargo-check on save"
-      "c" (my/toggle my/rustic-cargo-check-on-save))
+      "c" (my/toggle my/rustic-cargo-check-on-save)
+      :desc "Toggle popup position"
+      "p" (lambda () (interactive) (message "TODO")))
 #+END_SRC
 ** Python
 For some reason, Doom’s Python module is relatively impoverished compared to the Spacemacs Python layer, in that few of the keybindings are evil-ified. I’m trying to make up the difference here.
@@ -623,8 +650,12 @@ Cavy is a little programming language I’m working on for fun. We should turn o
 
 (defun org-babel-execute:cavy (body params)
   "Orgmode Babel Cavy evaluate function for `BODY' with `PARAMS'."
-  (let* ((cmd "cavy /dev/stdin -o /dev/stdout --target latex"))
-    (org-babel-eval cmd body)))
+  ;; This command is a hack to get stderr into the output. `org-babel-execute'
+  ;; is supposed to put stderr into a special buffer on error. So, we make it
+  ;; always succeed (~|| true~) and redirect stderr to stdout. Together, this
+  ;; lets us capture error messages!
+  (let* ((cmd "cavyc /dev/stdin -o /dev/stdout --target qasm 2>&1 || true"))
+      (org-babel-eval cmd body)))
 
 ;; Syntax highlighting in exported code
 ;; (push '(cavy "rust") org-latex-minted-langs)
@@ -633,7 +664,6 @@ Cavy is a little programming language I’m working on for fun. We should turn o
 (after! all-the-icons
   (add-to-list 'all-the-icons-data/file-icon-alist
                '("cavy" . "")))
-
 #+end_src
 
 And we should set up some evil keybindings for it:
@@ -646,33 +676,38 @@ And we should set up some evil keybindings for it:
       "c" #'cavy-compile-and-preview
       :desc "toggle debug mode"
       "d" (my/toggle cavy-debug)
-      
+
       (:prefix ("t" . "target")
        :desc "set QASM compile target"
        "q" (lambda () (interactive) (setq cavy-compile-target 'qasm))
        :desc "set LaTeX compile target"
-       "l" (lambda () (interactive) (setq cavy-compile-target 'latex))
-       )
-      
+       "l" (lambda () (interactive) (setq cavy-compile-target 'latex)))
+
       (:prefix ("p" . "phase")
        :desc "parse"
-       "a" (lambda () (interactive) (setq cavy-phase "parse"))
+       "p" (lambda () (interactive) (setq cavy-phase "parse"))
        :desc "lower to MIR"
-       "m" (lambda () (interactive) (setq cavy-phase "typecheck"))
+       "l" (lambda () (interactive) (setq cavy-phase "typecheck"))
+       :desc "static analysis"
+       "a" (lambda () (interactive) (setq cavy-phase "analysis"))
        :desc "lower and optimize"
-       "o" (lambda () (interactive) (setq cavy-phase "optimize"))
+       "o" (lambda () (interactive) (setq cavy-phase "optimization"))
+       :desc "translate to LIR"
+       "t" (lambda () (interactive) (setq cavy-phase "translation"))
        :desc "compile object code"
-       "c" (lambda () (interactive (setq cavy-phase 'nil)))
-       )
+       "c" (lambda () (interactive (setq cavy-phase 'nil))))
 
       (:prefix ("o" . "optimization")
        :desc "toggle constant propagation"
        "c" (my/toggle cavy-comptime)
+       :desc "no optimization"
        "0" (lambda () (interactive (setq cavy-opt-level 0)))
+       :desc "O1"
        "1" (lambda () (interactive (setq cavy-opt-level 1)))
+       :desc "O2"
        "2" (lambda () (interactive (setq cavy-opt-level 2)))
-       "3" (lambda () (interactive (setq cavy-opt-level 3))))
-      )
+       :desc "O3"
+       "3" (lambda () (interactive (setq cavy-opt-level 3)))))
 #+end_src
 ** Silq
 Let’s get some block-evaluation going on for Silq.
@@ -737,14 +772,18 @@ All the overridden org-mode variables:
 
 #+BEGIN_SRC emacs-lisp
 (after! org
-  (setq-default
+  (setq
    org-log-done 'time  ;; when finishing a task, log the time
    org-hide-emphasis-markers t
+   org-export-headline-levels 5
+   org-id-link-to-org-use-id t
    org-startup-with-latex-preview t
    org-agenda-files (directory-files my/org-agenda-dir t "\.org$")
    org-latex-create-formula-image-program 'imagemagick
-   org-latex-pdf-process '("latexmk  -shell-escape -bibtex -pdf %f")
-   org-latex-listings 'minted)
+   org-latex-pdf-process '("latexmk  -shell-escape -bibtex -pdf %f"))
+  ;;uncomment this to use "minted" for listings
+  ;;org-latex-listings 'minted)
+
   (setq org-highlight-latex-and-related '(latex))
   (setq org-format-latex-options (plist-put org-format-latex-options :scale 1.0))
   (setq my/org-latex-packages-extra
@@ -790,19 +829,19 @@ All the overridden org-mode variables:
 
 ;; TODO break out a lot of these hooks into some appropriate ‘text-mode’ hook.
 (add-hook! 'org-mode-hook
-             (when (string-prefix-p my/org-agenda-dir (buffer-file-name))
-               (flycheck-mode -1))
-             (visual-line-mode) ;; improved wrapping
-             (org-indent-mode)
-             (electric-quote-mode) ;; replace “ and ”.
-             (display-line-numbers-mode -1)
-             (if (not (eq major-mode 'treemacs-mode))
-                 (progn
-                  (olivetti-mode)
-                  ;; (org-superstar-mode)
-                  (org-variable-pitch-minor-mode)))
-             (org-pretty-tags-mode)
-             (add-hook 'post-self-insert-hook #'my/latex-fragment-completion 'append 'local))
+  (when (string-prefix-p my/org-agenda-dir (buffer-file-name))
+    (flycheck-mode -1))
+  (visual-line-mode) ;; improved wrapping
+  (org-indent-mode)
+  (electric-quote-mode) ;; replace “ and ”.
+  (display-line-numbers-mode -1)
+  (if (not (eq major-mode 'treemacs-mode))
+      (progn
+        (olivetti-mode)
+        ;; (org-superstar-mode)
+        (org-variable-pitch-minor-mode)))
+  (org-pretty-tags-mode)
+  (add-hook 'post-self-insert-hook #'my/latex-fragment-completion 'append 'local))
 #+END_SRC
 
 A utility function to clear LaTeX previews. It might be nice to make this a native Emacs function instead of shelling out.
@@ -824,6 +863,13 @@ Another thing I want: I often insert drawers of questions, and would like a spec
       :desc "Insert questions"
       "Q" #'(lambda () (org-insert-drawer "QUESTIONS")))
 #+END_SRC
+
+I'd also like to use the ~:ignore:~ tag from ~ox-extra~ in order to exclude headers from export while including their contents.
+
+#+begin_src emacs-lisp
+(require 'ox-extra)
+(ox-extras-activate '(ignore-headlines))
+#+end_src
 
 ** Notebook emulation
 I want to be able to use Org for literate programming in a variety of scripting languages. In particular, I’d like to be able to match the functionality of Jupyter notebooks without dealing with its json format, clunky browser interface, and so on.
@@ -881,21 +927,6 @@ Finally, let’s set some defaults that make it relatively easy to run a kernel 
 ** Citation management
 This is a great big mess. You really need to figure it out at some point.
 
-Here are some keybindings for common things you might want to do with ~org-zotxt~. However, note that this is deprecated now that I’m using ~org-roam-bibtex~.
-
-#+BEGIN_SRC emacs-lisp
-;; (map! :after org
-;;       :map org-mode-map
-;;       :leader
-;;       :prefix ("\"" . "references")
-;;       :desc "Zotxt: insert reference link"
-;;       "i" #'org-zotxt-insert-reference-link
-;;       :desc "Zotxt: update reference link"
-;;       "u" #'org-zotxt-update-reference-link-at-point
-;;       :desc "Zotxt: open attachment"
-;;       "o" #'org-zotxt-open-attachment)
-#+END_SRC
-
 And these are some similar bindings for ~org-roam-bibtex~. I probably want this to be /globally/ accessible, really, but I’m not sure where to bind it. Looks like ~SPC-z~ is open, but I also want org-specific functions bound to the same cluster.
 
 #+BEGIN_SRC emacs-lisp
@@ -928,6 +959,13 @@ Here are some settings from the not-yet-merged ~biblio~ module, which I have in 
                                              t "\.bib$")
          +biblio-notes-path (concat org-roam-directory "/refs/")))
 #+END_SRC
+
+Ok, I don’t know what to do here. This variable is changed, some time during startup, from its default value to ~org-ref-get-pdf-filename-helm-bibtex~, a variable which is only used in one place directly beneath this. I can’t figure out why this is happening. Try using ~debug-watch~ to see if you can get somewhere with it. For now we’ll just hideously, manually reset it.
+#+begin_src emacs-lisp
+;; TODO get rid of this!
+(after! org-ref
+  (setq! org-ref-open-pdf-function 'org-ref-open-pdf-at-point))
+#+end_src
 
 We have to ensure that we open pdfs by looking up the bibliography ~file~ field, rather than by looking in a pdf directory.
 #+BEGIN_SRC emacs-lisp
