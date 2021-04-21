@@ -493,6 +493,13 @@ We also need to add a workaround for the [[https://github.com/rust-lang/rust-cli
   (rustic-run-cargo-command "cargo build --workspace"))
 #+end_src
 
+#+begin_src emacs-lisp
+(defun my/rustic-cargo-build-release ()
+  "Build, but for the whole workspace"
+  (interactive)
+  (rustic-run-cargo-command "cargo build --release"))
+#+end_src
+
 A helpful little function to add dependencies with ~cargo-add~
 
 #+begin_src emacs-lisp
@@ -526,6 +533,9 @@ A helpful little function to add dependencies with ~cargo-add~
       ;; override cargo-build to use the `--workspace` flag
       ;; :desc "cargo build"
       ;; "d" 'my/rustic-cargo-build
+      :prefix "b"
+      :desc "Release build"
+      "R" #'my/rustic-cargo-build-release
       :prefix ("T" . "toggle")
       :desc "Toggle format on save"
       "f" (my/toggle rustic-format-on-save)
@@ -654,7 +664,7 @@ Cavy is a little programming language I’m working on for fun. We should turn o
   ;; is supposed to put stderr into a special buffer on error. So, we make it
   ;; always succeed (~|| true~) and redirect stderr to stdout. Together, this
   ;; lets us capture error messages!
-  (let* ((cmd "cavyc /dev/stdin -o /dev/stdout --target latex 2>&1 || true"))
+  (let* ((cmd (concat cavy-binary " /dev/stdin -o /dev/stdout --target latex 2>&1 || true")))
     (org-babel-eval cmd body)))
 
 ;; Syntax highlighting in exported code
@@ -664,6 +674,16 @@ Cavy is a little programming language I’m working on for fun. We should turn o
 (after! all-the-icons
   (add-to-list 'all-the-icons-data/file-icon-alist
                '("cavy" . "")))
+#+end_src
+
+I also want to override its default indent function with a good one from a more professional major mode:
+
+#+begin_src emacs-lisp
+(after! cavy-mode
+  ;; TODO: (require 'rustic) or something?
+  (defun cavy-indent-line ()
+    "Indent a line of Cavy code using the indent function from `rustic'."
+    (rustic-indent-line)))
 #+end_src
 
 And we should set up some evil keybindings for it:
