@@ -431,22 +431,37 @@ Not necessary if using ~:editor format-all~ (or something like this? I forget wh
 I want to ensure that my compilation buffers show up on the right-hand side. Check the documentation for ~set-popup-rule!~ to find out about all the keys you can use for this.
 
 #+BEGIN_SRC emacs-lisp
+(setq my/rustic-popup-position 'bottom)
+
+(defun my/set-rustic-popup-rules ()
+  "Declare popup rules for rustic-mode"
+  (progn
+    (set-popup-rule! "^\\*rustic"
+      ;; :select t    ;; focus the window after it opens
+      ;; :action
+      :side my/rustic-popup-position
+      :width 0.40   ;; and fill 40% of it.
+      :quit nil)
+    (set-popup-rule! "^\\*cargo-"
+      ;; :select t    ;; focus the window after it opens
+      ;; :action
+      :side my/rustic-popup-position
+      :width 0.40   ;; and fill 45% of it.
+      :quit nil)))
+
+(defun my/rustic-toggle-popup-position ()
+  (interactive)
+  "Toggle rustic popups between bottom to side."
+  ;; set the new position variable
+  (let ((new-pos
+         (if (eq my/rustic-popup-position 'bottom)
+             (setq my/rustic-popup-position 'right)
+           (setq my/rustic-popup-position 'bottom))))
+    ;; Now declare the popup rules
+    (my/set-rustic-popup-rules)))
+
 (after! rustic
-  (set-popup-rule! "^\\*rustic"
-    ;; :select t    ;; focus the window after it opens
-    ;; :action
-    :side 'bottom ;; on the rhs of the screen
-    :width 0.40   ;; and fill 45% of it.
-    :quit nil
-    )
-  (set-popup-rule! "^\\*cargo-"
-    ;; :select t    ;; focus the window after it opens
-    ;; :action
-    :side 'bottom ;; on the rhs of the screen
-    :width 0.40   ;; and fill 45% of it.
-    :quit nil
-    )
-  )
+  (my/set-rustic-popup-rules))
 #+END_SRC
 
 It is sometimes advised, I think, to abrogate the use of advice. But I thought it would be much nicer to use this approach here than to define an entirely /new/ function and to bind it to some unused key or to override the binding for  ~rustic-cargo-run~. This is a much simpler version of the function ~cargo-comint-run~  appearing in my Spacemacs config.
@@ -542,7 +557,7 @@ A helpful little function to add dependencies with ~cargo-add~
       :desc "Toggle cargo-check on save"
       "c" (my/toggle my/rustic-cargo-check-on-save)
       :desc "Toggle popup position"
-      "p" (lambda () (interactive) (message "TODO")))
+      "p" #'my/rustic-toggle-popup-position)
 #+END_SRC
 ** Python
 For some reason, Doom’s Python module is relatively impoverished compared to the Spacemacs Python layer, in that few of the keybindings are evil-ified. I’m trying to make up the difference here.
@@ -695,41 +710,53 @@ And we should set up some evil keybindings for it:
       :desc "compile"
       "c" #'cavy-compile-and-preview
       :desc "toggle debug mode"
-      "d" (my/toggle cavy-debug)
+      "d" (lambda () (interactive) (cavy-toggle-opt 'debug))
 
       (:prefix ("t" . "target")
+       :desc "set summary compile target"
+       "s" (lambda () (interactive) (cavy-set-opt 'target "summary"))
        :desc "set QASM compile target"
-       "q" (lambda () (interactive) (setq cavy-target 'qasm))
+       "q" (lambda () (interactive) (cavy-set-opt 'target "qasm"))
        :desc "set LaTeX compile target"
-       "l" (lambda () (interactive) (setq cavy-target 'latex))
-       :desc "set standalone LaTeX compile target"
-       "L" (lambda () (interactive) (setq cavy-target 'latex_standalone)))
+       "l" (lambda () (interactive) (cavy-set-opt 'target "latex")))
+
+      (:prefix ("l" . "LaTeX")
+       :desc "toggle standalone"
+       "s" (lambda () (interactive) (cavy-toggle-opt 'standalone))
+       :desc "toggle kets"
+       "k" (lambda () (interactive) (cavy-toggle-opt 'initial-kets))
+       :desc "set quantikz package"
+       "z" (lambda () (interactive) (cavy-set-opt 'package "quantikz"))
+       :desc "set qcircuit package"
+       "c" (lambda () (interactive) (cavy-set-opt 'package "qcircuit"))
+       :desc "set yquant package"
+       "y" (lambda () (interactive) (cavy-set-opt 'package "yquant")))
 
       (:prefix ("p" . "phase")
        :desc "parse"
-       "p" (lambda () (interactive) (setq cavy-phase "parse"))
+       "p" (lambda () (interactive) (cavy-set-opt 'phase "parse"))
        :desc "lower to MIR"
-       "l" (lambda () (interactive) (setq cavy-phase "typecheck"))
+       "l" (lambda () (interactive) (cavy-set-opt 'phase "typecheck"))
        :desc "static analysis"
-       "a" (lambda () (interactive) (setq cavy-phase "analysis"))
+       "a" (lambda () (interactive) (cavy-set-opt 'phase "analysis"))
        :desc "lower and optimize"
-       "o" (lambda () (interactive) (setq cavy-phase "optimization"))
+       "o" (lambda () (interactive) (cavy-set-opt 'phase "optimization"))
        :desc "translate to LIR"
-       "t" (lambda () (interactive) (setq cavy-phase "translation"))
+       "t" (lambda () (interactive) (cavy-set-opt 'phase "translation"))
        :desc "compile object code"
-       "c" (lambda () (interactive (setq cavy-phase 'nil))))
+       "c" (lambda () (interactive (cavy-set-opt 'phase 'nil))))
 
       (:prefix ("o" . "optimization")
        :desc "toggle constant propagation"
        "c" (my/toggle cavy-comptime)
        :desc "no optimization"
-       "0" (lambda () (interactive (setq cavy-opt-level 0)))
+       "0" (lambda () (interactive) (cavy-set-opt 'opt-level 0))
        :desc "O1"
-       "1" (lambda () (interactive (setq cavy-opt-level 1)))
+       "1" (lambda () (interactive) (cavy-set-opt 'opt-level 1))
        :desc "O2"
-       "2" (lambda () (interactive (setq cavy-opt-level 2)))
+       "2" (lambda () (interactive) (cavy-set-opt 'opt-level 2))
        :desc "O3"
-       "3" (lambda () (interactive (setq cavy-opt-level 3)))))
+       "3" (lambda () (interactive) (cavy-set-opt 'opt-level 3))))
 #+end_src
 ** Silq
 Let’s get some block-evaluation going on for Silq.
@@ -795,14 +822,15 @@ All the overridden org-mode variables:
 #+BEGIN_SRC emacs-lisp
 (after! org
   (setq
-   org-log-done 'time  ;; when finishing a task, log the time
+   org-log-done 'time ;; when finishing a task, log the time
    org-hide-emphasis-markers t
    org-export-headline-levels 5
    org-id-link-to-org-use-id t
    org-startup-with-latex-preview t
    org-agenda-files (directory-files my/org-agenda-dir t "\.org$")
    org-latex-create-formula-image-program 'imagemagick
-   org-latex-pdf-process '("latexmk  -shell-escape -bibtex -pdf %f"))
+   org-latex-pdf-process '("latexmk  -shell-escape -bibtex -pdf %f")
+   olivetti-body-width 0.6)
   ;;uncomment this to use "minted" for listings
   ;;org-latex-listings 'minted)
 

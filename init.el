@@ -109,7 +109,7 @@
        lsp
        ;;macos             ; MacOS-specific commands
        (magit +forge)             ; a git porcelain for Emacs
-       ;;make              ; run make tasks from Emacs
+       make              ; run make tasks from Emacs
        pass              ; password manager for nerds
        pdf               ; pdf enhancements
        ;;prodigy           ; FIXME managing external services & code builders
@@ -204,10 +204,10 @@
        (default +bindings +smartparens)
 
        :private
-       biblio              ; custom biblio with org-bibtex as discussed mainly
+       biblio)              ; custom biblio with org-bibtex as discussed mainly
                                         ; in this issue:
                                         ; https://github.com/hlissner/doom-emacs/pull/2888
-       )
+       
 
 ;; Other global settings that must be set early.
 
