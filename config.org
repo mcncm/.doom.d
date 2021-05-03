@@ -1,4 +1,4 @@
-#+TITLE: Literate Doom Emacs configuration
+configuration
 #+AUTHOR: mcncm
 #+PROPERTY: header-args :emacs-lisp :tangle yes :comments no :cache yes :results silent
 #+STARTUP: org-startup-folded: showall
@@ -135,6 +135,12 @@ By default, Doom uses a variable-pitch font for treemacs. Let’s fix that. Howe
 #+begin_src emacs-lisp
 (after! doom-themes-ext-treemacs
   (setq doom-themes-treemacs-enable-variable-pitch nil))
+#+end_src
+
+Why would I /ever/ want the whole buffer to remain highlighted after a substitute operation?
+
+#+begin_src emacs-lisp
+(setq evil-ex-search-persistent-highlight nil)
 #+end_src
 
 ** Some extra bindings
@@ -432,6 +438,7 @@ I want to ensure that my compilation buffers show up on the right-hand side. Che
 
 #+BEGIN_SRC emacs-lisp
 (setq my/rustic-popup-position 'bottom)
+(setq my/rustic-popup-width 0.40)
 
 (defun my/set-rustic-popup-rules ()
   "Declare popup rules for rustic-mode"
@@ -440,25 +447,30 @@ I want to ensure that my compilation buffers show up on the right-hand side. Che
       ;; :select t    ;; focus the window after it opens
       ;; :action
       :side my/rustic-popup-position
-      :width 0.40   ;; and fill 40% of it.
-      :quit nil)
+      :width my/rustic-popup-width ;; and fill 40% of it.
+      :quit 'current)
     (set-popup-rule! "^\\*cargo-"
       ;; :select t    ;; focus the window after it opens
       ;; :action
       :side my/rustic-popup-position
-      :width 0.40   ;; and fill 45% of it.
-      :quit nil)))
+      :width my/rustic-popup-width ;; and fill 45% of it.
+      :quit 'current)))
 
-(defun my/rustic-toggle-popup-position ()
-  (interactive)
-  "Toggle rustic popups between bottom to side."
-  ;; set the new position variable
-  (let ((new-pos
-         (if (eq my/rustic-popup-position 'bottom)
-             (setq my/rustic-popup-position 'right)
-           (setq my/rustic-popup-position 'bottom))))
-    ;; Now declare the popup rules
-    (my/set-rustic-popup-rules)))
+(defmacro my/rustic-set-popup-pos (var)
+  `(lambda () (interactive)
+     "Declare the side of the screen for rustic-mode popups."
+     (progn
+       (setq my/rustic-popup-position ,var)
+       (my/set-rustic-popup-rules))))
+
+(defmacro my/modify-rustic-popup-width (delta)
+  `(lambda () (interactive)
+     (progn
+       (setq my/rustic-popup-width
+        (min 1.0
+             (max 0.0
+                  (+ ,delta my/rustic-popup-width))))
+       (my/set-rustic-popup-rules))))
 
 (after! rustic
   (my/set-rustic-popup-rules))
@@ -487,10 +499,6 @@ I’d also like to be able to enjoy a development style that feels a little like
 
 #+begin_src emacs-lisp
 (setq my/rustic-cargo-check-on-save t)
-
-(defadvice! rustic-cargo-check-on-save ()
-  :after #'rustic-after-save-hook
-  (if my/rustic-cargo-check-on-save (rustic-cargo-check)))
 #+end_src
 
 We also need to add a workaround for the [[https://github.com/rust-lang/rust-clippy/issues/4612][clippy-after-check]] bug. The easiest fix is to touch every file in the project. This version of the solution is a little incomplete; it should try to find the crate root.
@@ -551,14 +559,26 @@ A helpful little function to add dependencies with ~cargo-add~
       :prefix "b"
       :desc "Release build"
       "R" #'my/rustic-cargo-build-release
+      :desc "Build and watch"
+      "w" #'my/rustic-cargo-build-watch
+      :prefix ("p" . "popups")
+      :desc "Popup left"
+      "l" (my/rustic-set-popup-pos 'left)
+      :desc "Popup right"
+      "r" (my/rustic-set-popup-pos 'right)
+      :desc "Popup bottom"
+      "b" (my/rustic-set-popup-pos 'bottom)
+      :desc "Embiggen popup"
+      "+" (my/modify-rustic-popup-width 0.05)
+      :desc "Srink popup"
+      "-" (my/modify-rustic-popup-width -0.05)
       :prefix ("T" . "toggle")
       :desc "Toggle format on save"
       "f" (my/toggle rustic-format-on-save)
       :desc "Toggle cargo-check on save"
-      "c" (my/toggle my/rustic-cargo-check-on-save)
-      :desc "Toggle popup position"
-      "p" #'my/rustic-toggle-popup-position)
+      "c" (my/toggle my/rustic-cargo-check-on-save))
 #+END_SRC
+
 ** Python
 For some reason, Doom’s Python module is relatively impoverished compared to the Spacemacs Python layer, in that few of the keybindings are evil-ified. I’m trying to make up the difference here.
 
@@ -670,6 +690,7 @@ Cavy is a little programming language I’m working on for fun. We should turn o
 #+begin_src emacs-lisp
 (use-package "~/proj/cavy/cavy-mode/cavy-mode.el")
 (setq cavy-binary "~/proj/cavy/cavy-lang/target/debug/cavyc")
+(setq cavy-alt-binary "~/proj/cavy/cavy-lang/target/release/cavyc")
 (add-to-list 'auto-mode-alist '("\\.cavy\\'" . cavy-mode))
 (add-to-list 'auto-mode-alist '("\\.cv\\'" . cavy-mode))
 
@@ -701,6 +722,67 @@ I also want to override its default indent function with a good one from a more 
     (rustic-indent-line)))
 #+end_src
 
+Another utility I'd like to have is the ability to set a watch on a file and display the Cavy compiler output every time I compile the Rust project.
+
+#+begin_src emacs-lisp
+;; first of all, initialize the watched-buffer variable
+(setq my/watched-cavy-buffer 'nil)
+
+;; could improve by filtering the buffers
+(defun my/ivy-select-cavy-buffer ()
+  "Watch a Cavy buffer."
+  (interactive)
+  (ivy-read "Watch Cavy buffer: " #'internal-complete-buffer
+            :keymap ivy-switch-buffer-map
+            :preselect (buffer-name (other-buffer (current-buffer)))
+            :action #'my/watch-cavy-buffer
+            :matcher #'ivy--switch-buffer-matcher
+            :caller 'my/ivy-select-cavy-buffer))
+
+(defun my/watch-cavy-buffer (name-of-buffer)
+  (progn
+    ;; get rid of the last hook, if there was one
+    (if (and my/watched-cavy-buffer
+             (get-buffer my/watched-cavy-buffer))
+        (with-current-buffer my/watched-cavy-buffer
+          (remove-hook! 'kill-buffer-hook :local
+            #'my/clear-watched-cavy-buffer)))
+    ;; now set the new buffer
+    (setq my/watched-cavy-buffer name-of-buffer)
+    ;; and put the hook on the new one
+    (with-current-buffer my/watched-cavy-buffer
+      (add-hook! 'kill-buffer-hook :local
+                 #'my/clear-watched-cavy-buffer))))
+
+(defun my/clear-watched-cavy-buffer ()
+  (interactive)
+  (setq my/watched-cavy-buffer 'nil))
+
+;; run `cargo build` with a sentinel that will run the watch command(s) on
+;; completion. As a matter of fact, this will be useful for all sorts of things.
+;; Right now I'm just using it for Cavy, but I really should refactor it so it
+;; can be useful for all sorts of projects
+(defun my/rustic-cargo-build-watch ()
+  (interactive)
+  (rustic-run-cargo-command
+   "cargo build"
+   '(:sentinel my/rustic-watch-sentinel)))
+
+(defun my/rustic-watch-sentinel (process event)
+  (progn
+    (compilation-sentinel process event)
+    (if (string= event "finished\n")
+        (my/rustic-watched-file-actions))))
+
+
+;; finally, actually do the action(s)
+(defun my/rustic-watched-file-actions ()
+  ;; at the moment, just do the Cavy thing
+  (if my/watched-cavy-buffer
+      (with-current-buffer my/watched-cavy-buffer
+        (cavy-compile-and-preview))))
+#+end_src
+
 And we should set up some evil keybindings for it:
 
 #+begin_src emacs-lisp
@@ -709,6 +791,13 @@ And we should set up some evil keybindings for it:
       :localleader
       :desc "compile"
       "c" #'cavy-compile-and-preview
+      :desc "compile-alt"
+      "C" #'(lambda () (interactive)
+              (let ((old cavy-binary))
+                (progn
+                  (setq cavy-binary cavy-alt-binary)
+                  (cavy-compile-and-preview)
+                  (setq cavy-binary old))))
       :desc "toggle debug mode"
       "d" (lambda () (interactive) (cavy-toggle-opt 'debug))
 
