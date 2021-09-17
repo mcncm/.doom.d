@@ -80,10 +80,10 @@
        vc                ; version-control and Emacs, sitting in a tree
 
        :term
-       eshell            ; the elisp shell that works everywhere
-       shell             ; simple shell REPL for Emacs
+       ;; eshell            ; the elisp shell that works everywhere
+       ;; shell             ; simple shell REPL for Emacs
        ;;term              ; basic terminal emulator for Emacs
-       ;; vterm             ; the best terminal emulation in Emacs
+       vterm             ; the best terminal emulation in Emacs
 
        :checkers
        syntax              ; tasing you for every semicolon you forget
@@ -97,7 +97,7 @@
                                         ; You should consider using the branch that incorporates
                                         ; org-bibtex
        ;;debugger          ; FIXME stepping through code, to help you add bugs
-       ;;direnv
+       direnv
        ;;docker
        ;;editorconfig      ; let someone else argue about tabs vs spaces
        ;;ein               ; tame Jupyter notebooks with emacs
@@ -137,18 +137,18 @@
        ;;ess               ; emacs speaks statistics
        ;;faust             ; dsp, but you get to keep your soul
        ;;fsharp            ; ML stands for Microsoft's Language
-       ;;fstar             ; (dependent) types and (monadic) effects and Z3
+       fstar             ; (dependent) types and (monadic) effects and Z3
        ;;gdscript          ; the language you waited for
        ;;(go +lsp)         ; the hipster dialect
-       ;;(haskell
+       (haskell
        ;; +dante
-       ;;+lsp)  ; a language that's lazier than I am
+       +lsp)  ; a language that's lazier than I am
        ;;hy                ; readability of scheme w/ speed of python
        ;;idris             ;
        json              ; At least it ain't XML
        ;;(java +meghanada) ; the poster child for carpal tunnel syndrome
        javascript        ; all(hope(abandon(ye(who(enter(here))))))
-       (julia +lsp)             ; a better, faster MATLAB
+       ;; (julia +lsp)   ; a better, faster MATLAB
        ;;kotlin            ; a better, slicker Java(Script)
        (latex
         +lsp
@@ -161,7 +161,7 @@
        markdown          ; writing docs for people to ignore
        ;;nim               ; python + lisp at the speed of c
        nix               ; I hereby declare "nix geht mehr!"
-       ;; ocaml             ; an objective camel
+       ;;ocaml             ; an objective camel
        (org +roam
             +journal
             +jupyter  ; disabled for now; doesn't build correctly
@@ -186,8 +186,9 @@
        ;;solidity          ; do you need a blockchain? No.
        ;;swift             ; who asked for emoji variables?
        ;;terra             ; Earth and Moon in alignment for performance.
-       ;;web               ; the tubes
+       (web +html +css +lsp)               ; the tubes
        yaml              ; JSON, but readable
+       (zig +lsp)
 
        :email
        (mu4e +gmail)

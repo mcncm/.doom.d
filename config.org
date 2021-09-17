@@ -7,6 +7,9 @@ I’ve been migrating from [[https://www.spacemacs.org/][Spacemacs]] to [[https:
 ** Conventions
 + “Personal” variables and functions have the prefix ~my/~ as a namespacing convention.
 * Default Doom config preamble
+:PROPERTIES:
+:ID:       a7970dd7-441a-41b8-8401-68f15511ea0f
+:END:
 Use lexical binding /always/; otherwise, ~let~ constructs will not behave intuitively. Note that for this header to work properly in a literate config, we must include the ~:comments no~ attribute in the headers above, and it must come /after/ ~:tangle yes~. You can also set this attribute for each block.
 
 #+BEGIN_SRC emacs-lisp
@@ -44,7 +47,8 @@ This is just the block at the top of the ~config.el~ that ships with Doom Emacs,
 (setq my/code-size 20)
 ;; (setq my/text-family "Georgia")
 ;; (setq my/text-family "Iosevka")
-(setq my/text-family "ETBookOT")
+(setq my/text-family "XETBook")
+;;(setq my/text-family "CrimsonText")
 ;; (setq my/text-family "National Park")
 (setq my/text-size 25)
 
@@ -84,6 +88,9 @@ This is just the block at the top of the ~config.el~ that ships with Doom Emacs,
 
 * Generalities
 ** System things
+:PROPERTIES:
+:ID:       09950f0e-0bc9-44d9-8487-09cdd7052611
+:END:
 Here are some directories I want to keep track of.
 #+begin_src  emacs-lisp
 (setq
@@ -97,6 +104,9 @@ Here are some directories I want to keep track of.
                      "/agenda"))
 #+end_src
 ** Some better defaults
+:PROPERTIES:
+:ID:       1d69347d-73fc-40b9-a2f2-9a3bc6b42e95
+:END:
 I’d like to set some variables that generally make life better.
 
 Here I’m trying to more closely match the [[https://www.spacemacs.org/][Spacemacs]] convention that I like. I'm still not sure what the default “repeat” behavior of the comma key actually /does/. For all I know, I might prefer it. In any case, I should also see if I ought to unmap that key first. Note that this *unmaps* ~SPC-m~.
@@ -144,6 +154,9 @@ Why would I /ever/ want the whole buffer to remain highlighted after a substitut
 #+end_src
 
 ** Some extra bindings
+:PROPERTIES:
+:ID:       1bff5219-551e-42f7-94da-91a5aadcbf82
+:END:
 I’m always turning electric quotes on and off, so it helps to have this bound for quick access. It might be even better to set up the package to understand when it’s in a source block and so on. Let’s toggle treemacs, too.
 #+BEGIN_SRC emacs-lisp
 (map! :leader
@@ -155,7 +168,11 @@ I’m always turning electric quotes on and off, so it helps to have this bound 
 #+END_SRC
 
 ** “Verbal” bindings and tidbits
-#+BEGIN_SRC emacs-lisp
+:PROPERTIES:
+:ID:       dc5af299-6de5-4a09-b16f-b90875658c59
+:END:
+Google translate, which we're not using right now.
+#+BEGIN_SRC emacs-lisp :tangle no
 (use-package! google-translate
   :config
   (setq google-translate-default-target-language "English"))
@@ -200,6 +217,9 @@ I’d also like my dictionary popups to fill a little more of the screen than th
     ))
 #+END_SRC
 *** Dictionary settings
+:PROPERTIES:
+:ID:       7a1495de-60e4-4567-baa7-f94a38ff1f35
+:END:
 I couldn’t figure out how to make this work until following tecosaur. Thanks, tecosaur.
 #+BEGIN_SRC emacs-lisp
 (setq ispell-dictionary "en"
@@ -209,6 +229,9 @@ I couldn’t figure out how to make this work until following tecosaur. Thanks, 
 #+END_SRC
 
 ** Little helper functions
+:PROPERTIES:
+:ID:       ec5d3954-a5a9-40fc-bfb9-bfb2e40e71b9
+:END:
 There are no longer any helper functions here. I should figure out where to put these key bindings.
 
 #+BEGIN_SRC emacs-lisp
@@ -249,6 +272,9 @@ Here are two little auxiliary functions for retrieving palette colors. I’m not
 #+END_SRC
 
 ** Behold the dodecahedron!
+:PROPERTIES:
+:ID:       885b2cc1-cf4f-4207-a2af-b9dd30d6edad
+:END:
 This is my Doom banner, or splash screen icon. It's chosen randomly from a directory full of banner options. One of these is a dodecahedron that I'm quite fond of.
 
 #+BEGIN_SRC emacs-lisp
@@ -312,12 +338,18 @@ Let’s run this when we change themes, so it’s colored correctly. I guess tha
 (add-hook! 'doom-load-theme-hook #'my/recolor-banner)
 #+END_SRC
 ** Finally, load a theme
+:PROPERTIES:
+:ID:       5e2bc1ed-a72b-4ba1-8be5-4f6e3be07246
+:END:
 We put this off until now because we had to set that hook. Otherwise the splash image would not be colored properly on startup.
 #+begin_src emacs-lisp
 (load-theme 'ewal-doom-one t)
 #+end_src
 Honestly, this slows down startup by a little bit. Maybe half of a second. Does look cool, though.
 ** Odds and ends
+:PROPERTIES:
+:ID:       6da9996e-9d26-4e24-a74a-a0d3ceb4e157
+:END:
 See ~all-the-icons~ major mode icon in modeline
 #+BEGIN_SRC emacs-lisp
 (setq-default doom-modeline-major-mode-icon t)
@@ -350,6 +382,9 @@ Saves to a temp file and puts the filename in the kill ring."
 
 * Fonts, faces, and characters
 ** Better color defaults
+:PROPERTIES:
+:ID:       29623dd3-d44a-4bf6-a8aa-7f7b7142c154
+:END:
 Fix some pretty awful ~lsp~ colors. To check: are all these ~after!~ macros expensive? Are they hurting my startup time? Should I be putting them in some specific order?
 
 #+BEGIN_SRC emacs-lisp
@@ -367,6 +402,9 @@ Coq-related face settings from my old Spacemacs config, which are not exactly co
 #+END_SRC
 
 ** Org faces
+:PROPERTIES:
+:ID:       cf7d0273-4734-4592-9ee0-5bad74f7753e
+:END:
 Some sensible org theme things. I think I snagged these from [[https://github.com/biblecraft-abe/Spacemacs][Abraham Peters]].
 
 #+BEGIN_SRC emacs-lisp
@@ -412,6 +450,9 @@ Need to set ~org-src-block-faces~, and we should set it /before/ loading org mod
         ("silq" (:family ,my/code-family))))
 #+END_SRC
 ** Ligatures
+:PROPERTIES:
+:ID:       21847da1-0eed-427c-895b-599a9f3e589a
+:END:
 Fira Code is a pretty nice programming font, and I like its ligatures and special characters. But some of them, like rendering ~x~ as a multiplication sign, are a little ugly.
 
 This block is currently excluded (~:tangle no~) because ~fira-code-mode~ seems to not play well with the ~ligatures~ module. I’m not sure how to successfully get Fira ligatures as well as all the others.
@@ -427,6 +468,27 @@ Let’s set the disabled ligatures for the ~+ligatures~ package.
 #+end_src
 * Programming
 ** Rust
+:PROPERTIES:
+:ID:       8ecc080b-0c4b-4f57-98b9-42458275523a
+:END:
+
+Let’s give ourselves a little function to create a new Rust project and pop into ~lib.rs~
+
+#+begin_src emacs-lisp
+(setq my/proj-dir "~/proj")
+
+(defun my/cargo-new ()
+  "Create a new cargo project and open `lib.rs'"
+  (interactive)
+  (let ((proj (concat my/proj-dir "/"
+                      (read-string "Crate name: "))))
+    (progn
+      ;; First, create it
+      (shell-command (concat "cargo new --lib " proj))
+      ;; Then, open a new buffer
+      (find-file (concat proj "/src/lib.rs")))))
+#+end_src
+
 Not necessary if using ~:editor format-all~ (or something like this? I forget what the setting was called), but that seems not to work. In any case, I think I might prefer ~rust-mode~ to ~rustic~. I might consider going back, even within Doom.
 
 #+BEGIN_SRC emacs-lisp :tangle no
@@ -484,43 +546,58 @@ It is sometimes advised, I think, to abrogate the use of advice. But I thought i
   :after #'rustic-cargo-run
   (switch-to-buffer-other-window "*rustic-compilation*")
   (comint-mode))
-  ;; (with-current-buffer (get-buffer "*rustic-compilation*")
-  ;;   (comint-mode))
-  ;; (evil-goto-line))
-  ;; (sleep-for 1)
-  ;;  (comint-mode)
-  ;;  (read-only-mode 0)
-  ;;  (evil-goto-line)
-  ;;  (evil-append-line))
-  ;; (read-only-mode 0))
+;; (with-current-buffer (get-buffer "*rustic-compilation*")
+;;   (comint-mode))
+;; (evil-goto-line))
+;; (sleep-for 1)
+;;  (comint-mode)
+;;  (read-only-mode 0)
+;;  (evil-goto-line)
+;;  (evil-append-line))
+;; (read-only-mode 0))
 #+END_SRC
 
 I’d also like to be able to enjoy a development style that feels a little like Coq development, where I refactor by making a single local edit, then following the error messages until the program type-checks again. To this end, let’s set up a command to start a ~cargo-watch~ session.
 
 #+begin_src emacs-lisp
-(setq my/rustic-cargo-check-on-save t)
-#+end_src
-
-We also need to add a workaround for the [[https://github.com/rust-lang/rust-clippy/issues/4612][clippy-after-check]] bug. The easiest fix is to touch every file in the project. This version of the solution is a little incomplete; it should try to find the crate root.
-
-#+begin_src emacs-lisp
-(defadvice! rustic-clippy-workaround ()
-  :before #'rustic-cargo-clippy
-  (shell-command "touch **.rs"))
-#+end_src
-
-#+begin_src emacs-lisp
-(defun my/rustic-cargo-build ()
-  "Build, but for the whole workspace"
-  (interactive)
-  (rustic-run-cargo-command "cargo build --workspace"))
-#+end_src
-
-#+begin_src emacs-lisp
 (defun my/rustic-cargo-build-release ()
-  "Build, but for the whole workspace"
+  "Do a release build"
   (interactive)
   (rustic-run-cargo-command "cargo build --release"))
+
+(defun my/rustic-cargo-check ()
+  "Check, but in the current default directory; not the workspace."
+  (interactive)
+  (rustic-run-cargo-command
+   "cargo check"
+   `(:directory ,default-directory)))
+
+(defun my/rustic-cargo-test ()
+  "Run all tests, but in the current default directory; not the workspace"
+  (interactive)
+  (rustic-run-cargo-command
+   "cargo test --no-fail-fast"
+   `(:directory ,default-directory)))
+#+end_src
+
+All right. ~rustic-mode~ seems to be having some mild personal problems. This function is defined in ~rustic.el~ with ~Cargo.toml~ rather than ~Cargo.lock~, inconsistent with the comment. Maybe I should report this as a bug.
+
+#+begin_src emacs-lisp
+(after! rustic
+    (defun rustic-buffer-workspace (&optional nodefault)
+    "Return the Rust workspace for the current buffer.
+    This is the directory containing the file \"Cargo.lock\".  When
+    called outside a Rust project, then return `default-directory',
+    or if NODEFAULT is non-nil, then fall back to returning nil."
+    (or rustic--buffer-workspace
+        (let ((dir (locate-dominating-file default-directory "Cargo.lock")))
+            (when dir
+            (setq dir (expand-file-name dir)))
+            (setq rustic--buffer-workspace dir)
+            (or dir
+                (and (not nodefault)
+                    default-directory)))))
+    )
 #+end_src
 
 A helpful little function to add dependencies with ~cargo-add~
@@ -557,17 +634,22 @@ A helpful little function to add dependencies with ~cargo-add~
       ;; :desc "cargo build"
       ;; "d" 'my/rustic-cargo-build
       :prefix "b"
-      :desc "Release build"
+      :desc "release build"
       "R" #'my/rustic-cargo-build-release
-      :desc "Build and watch"
+      :desc "build and watch"
       "w" #'my/rustic-cargo-build-watch
+      :desc "cargo check"
+      "c" #'my/rustic-cargo-check
+      :prefix "t"
+      :desc "all"
+      "a" #'my/rustic-cargo-test
       :prefix ("p" . "popups")
       :desc "Popup left"
-      "l" (my/rustic-set-popup-pos 'left)
+      "h" (my/rustic-set-popup-pos 'left)
       :desc "Popup right"
-      "r" (my/rustic-set-popup-pos 'right)
+      "l" (my/rustic-set-popup-pos 'right)
       :desc "Popup bottom"
-      "b" (my/rustic-set-popup-pos 'bottom)
+      "j" (my/rustic-set-popup-pos 'bottom)
       :desc "Embiggen popup"
       "+" (my/modify-rustic-popup-width 0.05)
       :desc "Srink popup"
@@ -580,6 +662,9 @@ A helpful little function to add dependencies with ~cargo-add~
 #+END_SRC
 
 ** Python
+:PROPERTIES:
+:ID:       a35914a2-c500-43d4-bf52-97239c27e509
+:END:
 For some reason, Doom’s Python module is relatively impoverished compared to the Spacemacs Python layer, in that few of the keybindings are evil-ified. I’m trying to make up the difference here.
 
 First, a little helper macro for do-and-switch-to-window functions, which will be helpful for defining these keybindings:
@@ -658,6 +743,9 @@ This /doesn’t quite work/ right now. In particular, the /first/ python buffer 
     :lambda "lambda"))
 #+END_SRC
 ** C/C++
+:PROPERTIES:
+:ID:       8068077e-30ad-4645-8183-3ab10a614328
+:END:
 No ligatures, please!
 #+BEGIN_SRC emacs-lisp
 (after! cc-mode
@@ -665,6 +753,9 @@ No ligatures, please!
   (set-ligatures! 'c-mode nil))
 #+END_SRC
 ** Julia
+:PROPERTIES:
+:ID:       96c0dcbc-3987-406e-8421-377694e985be
+:END:
 Override the default 1.0 environment for my actual Julia version.
 #+BEGIN_SRC emacs-lisp
 (setq lsp-julia-default-environment "~/.julia/environments/v1.5")
@@ -685,14 +776,28 @@ I’d like to use Mathematica within Org-mode. This first pass is taken from [[h
 ;; For wolfram-mode
 (setq mathematica-command-line "~/.local/bin/mash")
 #+end_src
+** Haskell
+# :PROPERTIES:
+# :ID:       a9e8e127-2e8e-46b3-bfad-33478c8f4986
+# :END:
+# #+begin_src emacs-lisp
+# (after! org
+#   (require 'ob-haskell))
+# #+end_src
 ** Cavy
+:PROPERTIES:
+:ID:       2dfd70ed-8272-4152-b763-3f1902b28d52
+:END:
 Cavy is a little programming language I’m working on for fun. We should turn on its major mode while editing Cavy source.
 #+begin_src emacs-lisp
-(use-package "~/proj/cavy/cavy-mode/cavy-mode.el")
-(setq cavy-binary "~/proj/cavy/cavy-lang/target/debug/cavyc")
-(setq cavy-alt-binary "~/proj/cavy/cavy-lang/target/release/cavyc")
+(load-file "~/proj/cavy/cavy-mode/cavy-mode.el")
+(setq cavy-binary "~/.cargo/bin/cavyc")
+(setq cavy-alt-binary "~/proj/cavy/cavy-lang/target/debug/cavyc")
 (add-to-list 'auto-mode-alist '("\\.cavy\\'" . cavy-mode))
 (add-to-list 'auto-mode-alist '("\\.cv\\'" . cavy-mode))
+
+(defun my/org-babel-cavy-base-build-cmd (input output)
+  (concat cavy-binary " " input " -o " output " --target latex --nwtarg --initial-kets"))
 
 (defun org-babel-execute:cavy (body params)
   "Orgmode Babel Cavy evaluate function for `BODY' with `PARAMS'."
@@ -700,7 +805,7 @@ Cavy is a little programming language I’m working on for fun. We should turn o
   ;; is supposed to put stderr into a special buffer on error. So, we make it
   ;; always succeed (~|| true~) and redirect stderr to stdout. Together, this
   ;; lets us capture error messages!
-  (let* ((cmd (concat cavy-binary " /dev/stdin -o /dev/stdout --target latex 2>&1 || true")))
+  (let* ((cmd (concat (my/org-babel-cavy-base-build-cmd "/dev/stdin" "/dev/stdout") " 2>&1 || true")))
     (org-babel-eval cmd body)))
 
 ;; Syntax highlighting in exported code
@@ -806,6 +911,8 @@ And we should set up some evil keybindings for it:
        "s" (lambda () (interactive) (cavy-set-opt 'target "summary"))
        :desc "set QASM compile target"
        "q" (lambda () (interactive) (cavy-set-opt 'target "qasm"))
+       :desc "set debug compile target"
+       "d" (lambda () (interactive) (cavy-set-opt 'target "debug"))
        :desc "set LaTeX compile target"
        "l" (lambda () (interactive) (cavy-set-opt 'target "latex")))
 
@@ -814,6 +921,8 @@ And we should set up some evil keybindings for it:
        "s" (lambda () (interactive) (cavy-toggle-opt 'standalone))
        :desc "toggle kets"
        "k" (lambda () (interactive) (cavy-toggle-opt 'initial-kets))
+       :desc "toggle wave"
+       "w" (lambda () (interactive) (cavy-toggle-opt 'wave))
        :desc "set quantikz package"
        "z" (lambda () (interactive) (cavy-set-opt 'package "quantikz"))
        :desc "set qcircuit package"
@@ -835,6 +944,14 @@ And we should set up some evil keybindings for it:
        :desc "compile object code"
        "c" (lambda () (interactive (cavy-set-opt 'phase 'nil))))
 
+      (:prefix ("m" . "measurement")
+       :desc "demolition"
+       "d" (lambda () (interactive) (cavy-set-opt 'meas-mode "demolition"))
+       :desc "nondemo"
+       "n" (lambda () (interactive) (cavy-set-opt 'meas-mode "nondemolition"))
+       :desc "dirty"
+       "D" (lambda () (interactive) (cavy-set-opt 'meas-mode "dirty")))
+
       (:prefix ("o" . "optimization")
        :desc "toggle constant propagation"
        "c" (my/toggle cavy-comptime)
@@ -848,6 +965,9 @@ And we should set up some evil keybindings for it:
        "3" (lambda () (interactive) (cavy-set-opt 'opt-level 3))))
 #+end_src
 ** Silq
+:PROPERTIES:
+:ID:       2d21ee0c-5021-4359-901a-9ddbe5b0d4e0
+:END:
 Let’s get some block-evaluation going on for Silq.
 #+begin_src emacs-lisp
 (defun org-babel-execute:silq (body params)
@@ -867,6 +987,9 @@ And a simple major mode, which appears to be a prerequisite for fontification of
 #+end_src
 
 ** Company
+:PROPERTIES:
+:ID:       1d9d34ee-2b1a-4352-8e2e-683466b986cc
+:END:
 Will this make ~company-mode~ work?
  for.
 #+BEGIN_SRC emacs-lisp
@@ -888,10 +1011,25 @@ Will this make ~company-mode~ work?
 (setq +lsp-company-backend
       '(company-lsp :with company-tabnine :separate))
 #+END_SRC
+** Tree-sitter
+:PROPERTIES:
+:ID:       3e9a565b-ea3f-494a-8712-90b88e7d6b48
+:END:
+Shamelessly borrowed from [[https://hungyi.net/posts/use-emacs-tree-sitter-doom-emacs/][this]] blog post.
+#+begin_src emacs-lisp
+(use-package! tree-sitter
+  :config
+  (require 'tree-sitter-langs)
+  (global-tree-sitter-mode)
+  (add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode))
+#+end_src
 
+* Utilities
+** Terminal emulation
 * Org-mode
 ** Main Org-mode settings
 :PROPERTIES:
+:ID:       46fc652b-fae9-409f-9c93-3a76cac97f18
 :END:
 A little helper function for completing latex fragments. Some notes:
 + Newlines aren’t working. It might be that you’re supposed to use a "character class" like ~[:space:]~ or ~\s~, but neither of these
@@ -915,7 +1053,7 @@ All the overridden org-mode variables:
    org-hide-emphasis-markers t
    org-export-headline-levels 5
    org-id-link-to-org-use-id t
-   org-startup-with-latex-preview t
+   org-startup-with-latex-preview 'nil
    org-agenda-files (directory-files my/org-agenda-dir t "\.org$")
    org-latex-create-formula-image-program 'imagemagick
    org-latex-pdf-process '("latexmk  -shell-escape -bibtex -pdf %f")
@@ -980,7 +1118,9 @@ All the overridden org-mode variables:
         ;; (org-superstar-mode)
         (org-variable-pitch-minor-mode)))
   (org-pretty-tags-mode)
-  (add-hook 'post-self-insert-hook #'my/latex-fragment-completion 'append 'local))
+  ;; disable latex fragment compilation for now
+  ;; (add-hook 'post-self-insert-hook #'my/latex-fragment-completion 'append 'local)
+  )
 #+END_SRC
 
 A utility function to clear LaTeX previews. It might be nice to make this a native Emacs function instead of shelling out.
@@ -1011,6 +1151,9 @@ I'd also like to use the ~:ignore:~ tag from ~ox-extra~ in order to exclude head
 #+end_src
 
 ** Notebook emulation
+:PROPERTIES:
+:ID:       8debee11-bc46-4b39-aa78-78b9384b73a7
+:END:
 I want to be able to use Org for literate programming in a variety of scripting languages. In particular, I’d like to be able to match the functionality of Jupyter notebooks without dealing with its json format, clunky browser interface, and so on.
 
 First, we might like to disable ~jupyter-repl-interaction-mode~ in source block editor buffers, thereby unbinding ~C-c C-c~ from evaluation. This conflicts with the source-editing buffer commit command. This could be an issue with Doom’s ~+jupyter~ option.
@@ -1064,6 +1207,9 @@ Finally, let’s set some defaults that make it relatively easy to run a kernel 
 #+END_SRC
 
 ** Citation management
+:PROPERTIES:
+:ID:       244864d8-45b8-4e58-8e28-dea85cb32ff1
+:END:
 This is a great big mess. You really need to figure it out at some point.
 
 And these are some similar bindings for ~org-roam-bibtex~. I probably want this to be /globally/ accessible, really, but I’m not sure where to bind it. Looks like ~SPC-z~ is open, but I also want org-specific functions bound to the same cluster.
@@ -1193,6 +1339,9 @@ I’d also like to use a distinct face for citations.
 #+END_SRC
 
 ** Org-roam
+:PROPERTIES:
+:ID:       fc99d163-3392-4c8a-ab98-eb3a7754737a
+:END:
 #+BEGIN_SRC emacs-lisp
 ;; org-roam configurations
 (after! org-roam
@@ -1220,6 +1369,9 @@ I’m also using ~org-roam-server~ to visualize the org graph. So far, these set
 #+END_SRC
 
 ** Org-noter
+:PROPERTIES:
+:ID:       6a86e991-0d58-4385-93bb-8b38454fe095
+:END:
 By default, Noter opens a new frame, although this is rarely the behavior I actually want. Symmetrically, we should keep the frame at the end of the Noter session. Let’s also change the default split fraction when editing notes.
 
 #+BEGIN_SRC emacs-lisp
@@ -1242,6 +1394,9 @@ Let’s also set a key to kill the noter session.
 We also want closing the Noter document buffer to quit the Noter session. This seems to actually be a /default/ behavior, since ~q~ is bound to ~org-noter-kill-session~ in ~org-noter-doc-mode~. But in practice this key just closes the doc buffer; it doesn’t remove the notes window as well.
 
 ** Org-journal
+:PROPERTIES:
+:ID:       771c50c3-a285-4011-a51b-47ea18f0517c
+:END:
 #+BEGIN_SRC emacs-lisp
 ;; org-journal configurations
 (after! org-journal
@@ -1254,6 +1409,9 @@ We also want closing the Noter document buffer to quit the Noter session. This s
 #+END_SRC
 
 ** Symbols
+:PROPERTIES:
+:ID:       b5814713-f40c-4259-8638-1419fb1f431e
+:END:
 See, as usual, [[https://tecosaur.github.io/emacs-config/config.html#symbols][tecosaur’s config]] for lots of good hints. I’ve shamelessly snagged these as the basis for my custom ligatures. All of tecosaur’s are still in here, but I think I’ll prune a lot of them.
 
 All right, this is almost working. The major problem that remains is that the Emacs Lisp symbol renders as what appears to be the TOR onion logo. Also, if I add the ~+fira~ option to the ~ligatures~ module, colons start rendering as some kind of unusual letter /k/, and other undesired things. I’m not sure how to get both Fira ligatures and the others working together.
@@ -1313,6 +1471,9 @@ All right, this is almost working. The major problem that remains is that the Em
 #+END_SRC
 
 * LaTeX
+:PROPERTIES:
+:ID:       6904a4b0-8a10-4f40-a67d-c53d27a3533d
+:END:
 Maybe this and ~org-mode~ should be refiled under [[*Documents][Documents]]; I’m not sure. It has its own top-level header for now.
 
 Let’s first set some defaults:
@@ -1325,7 +1486,6 @@ Doom doesn’t supply a lot of evil bindings for TeX by default, so let’s do t
 
 #+BEGIN_SRC emacs-lisp
 (map! :after tex-mode
-      :map TeX-mode-map
       :localleader
       "c" #'TeX-command-run-all  ;; compile and view the document
 )
@@ -1345,6 +1505,9 @@ Finally, pdf popups (which -- I think -- will mostly come from ~.tex~ documents)
 #+END_SRC
 
 * Documents
+:PROPERTIES:
+:ID:       272aa199-7ed5-406c-aebb-6059237a14d8
+:END:
 Some pdf viewing preferences: start in ~midnight-minor-mode~, and use theme colors.  I’m treating it not as a ‘pdf dark mode,’ but as a ‘pdf themed mode,’ which is what you really want most of the time.
 #+BEGIN_SRC emacs-lisp
 (defun my/set-pdf-view-midnight-colors ()
@@ -1394,6 +1557,9 @@ position."
 #+END_SRC
 
 * Email
+:PROPERTIES:
+:ID:       dea0c9cc-bd5e-4b0c-80b2-76cfe98b8add
+:END:
 ~mu4e~ doesn’t seem to be loading. Doom Emacs doesn’t find the ~site-lisp~ directory and add it to the load path even after a refresh. Maybe I’m supposed to build Emacs with /with/ the package, but ~mu~ doesn’t seem to be an allowd package in this derivation. Let’s just add it manually, which works just fine.
 
 #+begin_src emacs-lisp
@@ -1444,6 +1610,9 @@ And these are just setting up usual text-viewing minor modes. I wonder if I shou
 #+END_SRC
 
 * Technical drawing
+:PROPERTIES:
+:ID:       28f0da82-aded-4e24-9911-8f14e095bd3e
+:END:
 I’d like to be able to run a single command and add or update an ~.svg~ in-place. Here are some little commands to do this, inspired by [[https://castel.dev/post/lecture-notes-2/][Gilles Castel]], whose scripts I’m shamelessly using.
 
 #+BEGIN_SRC emacs-lisp

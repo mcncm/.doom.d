@@ -49,6 +49,9 @@
 ;; ...Or *all* packages (NOT RECOMMENDED; will likely break things)
 ;(unpin! t)
 
+;; (package! tree-sitter)
+;; (package! tree-sitter-langs)
+
 (package! ewal-doom-themes)
 (package! olivetti)
 (package! org-variable-pitch)
@@ -61,8 +64,10 @@
 (package! ivy-bibtex)
 ;; (package! zotxt)   ;; disabled for lack of use
 (package! mu4e-alert)
-(package! nov)
-(package! google-translate)
+;; (package! nov)
+;; (package! google-translate)
+
+(package! pinentry)
 
 ;; Mathematica in Org-mode
 ;; (package! wolfram-mode)
@@ -78,8 +83,8 @@
 
 ;; lsp-julia must be manually installed; is not included with the Julia
 ;; +lsp flag
-(package! lsp-julia
-  :recipe (:host github :repo "non-jedi/lsp-julia"))
+;; (package! lsp-julia
+;;   :recipe (:host github :repo "non-jedi/lsp-julia"))
 
 ;; ;; The `package!` macro might not be the "correct" way to do this, since it's
 ;; ;; meant for handling downloading, but this does seem to work well enough for
@@ -87,7 +92,7 @@
 ;; (package! cavy-mode
 ;;   :recipe (:local-repo ))
 
-(use-package "~/proj/cavy/cavy-mode/cavy-mode.el")
+;; (use-package "~/proj/cavy/cavy-mode/cavy-mode.el")
 
 ;; NOTE for the time being, emacs-jupyter has a bad interaction with native
 ;; comp. See the Github issue at:
