@@ -56,6 +56,8 @@ This is just the block at the top of the ~config.el~ that ships with Doom Emacs,
       doom-big-font (font-spec :family my/code-family :size 30)
       doom-variable-pitch-font (font-spec :family my/text-family :size my/text-size :weight 'thin))
 
+(setq doom-unicode-font (font-spec :family "Symbola" :size my/text-size))
+
 ;; There are two ways to load a theme. Both assume the theme is installed and
 ;; available. You can either set `doom-theme' or manually load a theme with the
 ;; `load-theme' function. This is the default:
@@ -370,7 +372,7 @@ Saves to a temp file and puts the filename in the kill ring."
     (message filename)))
 #+END_SRC
 
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no
 ;; alert configurations
 (after! alert
   (setq-default alert-default-style 'libnotify
@@ -985,7 +987,23 @@ And a simple major mode, which appears to be a prerequisite for fontification of
   ;; (setq-local font-lock-defaults '((silq-font-lock-keywords)))
   )
 #+end_src
+** Coq
+For some reason, ~undo-tree-mode~ is disabled in Coq buffers. Let’s turn it back on.
+#+begin_src emacs-lisp
+(add-hook! 'coq-mode-hook
+ (undo-tree-mode))
+#+end_src
 
+I’d like to not use some of the “prettified” symbols in ~company-coq-mode~ for which Fira Code already has better-looking ligatures. It’s mostly the arrows.
+#+begin_src emacs-lisp
+(after! company-coq
+  (let ((rejected-pretty-symbols '("->" "<-" "<->" ">->" "~>" "~~>" "-->" "<--" "=>")))
+    (setq company-coq-prettify-symbols-alist
+          (-filter (lambda (s) (not (member (car s) rejected-pretty-symbols)))
+                   company-coq-prettify-symbols-alist))))
+#+end_src
+** Lilypond
+There /is/ a ~lilypond-mode~, but it doesn’t seem to be on MELPA, and it maybe doesn’t work.
 ** Company
 :PROPERTIES:
 :ID:       1d9d34ee-2b1a-4352-8e2e-683466b986cc
@@ -1016,14 +1034,13 @@ Will this make ~company-mode~ work?
 :ID:       3e9a565b-ea3f-494a-8712-90b88e7d6b48
 :END:
 Shamelessly borrowed from [[https://hungyi.net/posts/use-emacs-tree-sitter-doom-emacs/][this]] blog post.
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
 (use-package! tree-sitter
   :config
   (require 'tree-sitter-langs)
   (global-tree-sitter-mode)
   (add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode))
 #+end_src
-
 * Utilities
 ** Terminal emulation
 * Org-mode

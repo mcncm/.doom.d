@@ -56,7 +56,7 @@
 (package! olivetti)
 (package! org-variable-pitch)
 (package! org-pretty-tags)
-(package! org-wild-notifier)
+;; (package! org-wild-notifier)
 ;; (package! org-roam-server)  ;; disabled for lack of use
 ;; (package! anki-editor)   ;; disabled for lack of use
 ;; (package! fira-code-mode)  ;; seems to not play nicely
@@ -101,3 +101,8 @@
 ;; (package! jupyter :recipe (:no-native-compile t))
 
 ;; (package! ob-async :recipe (:no-native-compile t))
+
+(package! lean4-mode :recipe
+  (:host github
+   :repo "leanprover/lean4"
+   :files ("lean4-mode/*.el")))
