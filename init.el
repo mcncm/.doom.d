@@ -191,3 +191,12 @@
        :config
        literate
        (default +bindings +smartparens))
+
+
+;; ;; Additional configuration that must be performed *early* (e.g. before a
+;; ;; particular package is loaded):
+
+;; This has to be set before `evil' is loaded in order to take effect. Perhaps
+;; the Doom `evil' module is supposed to take care of this (see issue 401), but
+;; at least for the time being we must put this here, and not in `config.el'.
+(setq evil-respect-visual-line-mode t)

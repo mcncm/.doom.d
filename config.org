@@ -86,8 +86,6 @@ And some miscellaneous "better defaults." Many of these are snagged from [[https
  image-scaling-factor 1
  ;; don't leave the whole buffer highlighted after a substitute operation.
  evil-ex-search-persistent-highlight nil
- ;; navigate by visual lines
- evil-respect-visual-line-mode t
  )
 #+end_src
 
@@ -378,6 +376,7 @@ Finally, pdf popups (which--I think--will mostly come from ~.tex~ documents) sho
   )
 )
 #+end_src
+
 * Documents
 Some pdf viewing preferences: start in ~midnight-minor-mode~, and use theme colors.  I'm treating it not as a 'pdf dark mode,' but as a 'pdf themed mode,' which is what you really want most of the time. Note that this *only* works for the themes called ~doom-*~, because only these modify the variable ~doom-themes--colors~.
 #+begin_src emacs-lisp
