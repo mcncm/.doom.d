@@ -4,7 +4,7 @@
 ;;; $DOOMDIR/config.el -*- lexical-binding: t; -*-
 #+end_src
 
-#+begin_src emacs_lisp
+#+begin_src emacs-lisp
 (load! "secrets/secrets.el")
 #+end_src
 
@@ -36,7 +36,6 @@
 
 ** Themes and appearance
 
-
 #+begin_src emacs-lisp
 (setq
  display-line-numbers-type 'relative
@@ -53,27 +52,6 @@ This is my Doom banner, or splash screen icon.
 Set a theme.
 #+begin_src emacs-lisp
 (setq doom-theme 'doom-one)
-#+end_src
-
-Here are two little auxiliary functions for retrieving palette colors. I'm not sure if there's already a (presumably Doom-specific) function that accomplishes this, but if there is I should use it.
-
-#+begin_src emacs-lisp
-(defun my/ewal-color (color)
-  "COLOR should be a symbol defined in ewal-base-palette. Options are:
-'comment, 'background, 'foreground, 'cursor, 'black, 'red,
-'green, 'yellow, 'blue, 'magenta, 'cyan, 'white"
-  (cdr (assoc color ewal-base-palette)))
-
-(defun my/theme-color (color)
-  "A generalization of `my/ewal-color` that should with for all Doom themes. COLOR should be a key in `doom-themes--colors`. Returns a hex code."
-  (let ((color-spec                 ;; a list with four elements
-         (seq-find
-         (lambda (x) (eq (car x) color)) ;; take the matching one
-         doom-themes--colors)))
-    (if color-spec
-        (car (cdr color-spec))      ;; return the second elemend
-      nil)                          ;; …if it exists.
-    ))
 #+end_src
 
 * Generalities
@@ -401,14 +379,14 @@ Finally, pdf popups (which--I think--will mostly come from ~.tex~ documents) sho
 )
 #+end_src
 * Documents
-Some pdf viewing preferences: start in ~midnight-minor-mode~, and use theme colors.  I'm treating it not as a 'pdf dark mode,' but as a 'pdf themed mode,' which is what you really want most of the time.
+Some pdf viewing preferences: start in ~midnight-minor-mode~, and use theme colors.  I'm treating it not as a 'pdf dark mode,' but as a 'pdf themed mode,' which is what you really want most of the time. Note that this *only* works for the themes called ~doom-*~, because only these modify the variable ~doom-themes--colors~.
 #+begin_src emacs-lisp
 (defun my/set-pdf-view-midnight-colors ()
   "Sets the colors for viewing pdfs in 'dark mode'"
   (interactive)
   (setq pdf-view-midnight-colors
-        (cons (my/theme-color 'fg)
-              (my/theme-color 'bg))))
+        (cons (doom-color 'fg)
+              (doom-color 'bg))))
 
 (after! pdf-view (my/set-pdf-view-midnight-colors))
 
