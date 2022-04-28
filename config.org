@@ -420,6 +420,26 @@ Some pdf viewing preferences: start in ~midnight-minor-mode~, and use theme colo
 (add-hook! 'pdf-view-mode-hook
             #'pdf-view-midnight-minor-mode)
 #+end_src
+* Citation management
+First we need to set our main bibliography. Right now this just refers to a variable set in `secrets/secrets.el`, kept there because it contains (*mildly*) sensitive information.
+#+begin_src emacs-lisp
+(after! citar
+  (setq citar-bibliography my/main-bibliography))
+#+end_src
+
+It would also be nice to have some keybindings for the most commonly-used
+bibliographical operations.
+#+begin_src emacs-lisp
+(map! :leader
+      :prefix ("\"" . "+cite")
+      :desc "insert citation"
+      "c" #'citar-insert-citation
+      :desc "open"
+      "o" #'citar-open
+      :desc "insert reference"
+      "r" #'citar-insert-reference
+)
+#+end_src
 
 * Email
 ~mu4e~ doesn't seem to be loading. Doom Emacs doesn't find the ~site-lisp~ directory and add it to the load path even after a refresh. Maybe I'm supposed to build Emacs with /with/ the package, but ~mu~ doesn't seem to be an allowed package in this derivation. Let's just add it manually, which works just fine.
