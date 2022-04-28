@@ -36,6 +36,7 @@
 
 ** Themes and appearance
 
+
 #+begin_src emacs-lisp
 (setq
  display-line-numbers-type 'relative
@@ -43,20 +44,20 @@
 #+end_src
 
 This is my Doom banner, or splash screen icon.
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (setq +doom-dashboard-banner-dir "~/.doom.d/banner"
       +doom-dashboard-banner-file
       (concat +doom-dashboard-banner-dir "/banner.png"))
-#+END_SRC
+#+end_src
 
 Set a theme.
 #+begin_src emacs-lisp
 (setq doom-theme 'doom-one)
 #+end_src
 
-Here are two little auxiliary functions for retrieving palette colors. I’m not sure if there’s already a (presumably Doom-specific) function that accomplishes this, but if there is I should use it.
+Here are two little auxiliary functions for retrieving palette colors. I'm not sure if there's already a (presumably Doom-specific) function that accomplishes this, but if there is I should use it.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (defun my/ewal-color (color)
   "COLOR should be a symbol defined in ewal-base-palette. Options are:
 'comment, 'background, 'foreground, 'cursor, 'black, 'red,
@@ -73,7 +74,7 @@ Here are two little auxiliary functions for retrieving palette colors. I’m not
         (car (cdr color-spec))      ;; return the second elemend
       nil)                          ;; …if it exists.
     ))
-#+END_SRC
+#+end_src
 
 * Generalities
 Some personal directories I'll need to keep track of.
@@ -86,9 +87,9 @@ Some personal directories I'll need to keep track of.
 #+end_src
 
 I prefer using `,` as a local leader, as in Spacemacs.
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (setq doom-localleader-key ",")
-#+END_SRC
+#+end_src
 
 It takes a while for the which-key tips to come up. Make this faster.
 #+begin_src emacs-lisp
@@ -113,15 +114,15 @@ And some miscellaneous "better defaults." Many of these are snagged from [[https
 #+end_src
 
 ** Extra bindings
-I’m always turning electric quotes on and off, so it helps to have this bound for quick access. It might be even better to set up the package to understand when it’s in a source block and so on. Let’s toggle treemacs, too.
-#+BEGIN_SRC emacs-lisp
+I'm always turning electric quotes on and off, so it helps to have this bound for quick access. It might be even better to set up the package to understand when it's in a source block and so on. Let's toggle treemacs, too.
+#+begin_src emacs-lisp
 (map! :leader
       :prefix ("t")
       :desc "Electric quote local mode"
       "q" #'electric-quote-mode
       :desc "Treemacs"
       "t" #'treemacs)
-#+END_SRC
+#+end_src
 
 Project-level ~make~ seems like a nice thing to have.
 #+begin_src emacs-lisp
@@ -131,7 +132,7 @@ Project-level ~make~ seems like a nice thing to have.
 #+end_src
 
 Find files in common locations
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (map! :map doom-leader-file-map
       :leader
       :prefix ("f" . "file")  ;; Is there a way to do this without getting the prefix just so?
@@ -145,21 +146,21 @@ Find files in common locations
       "n" #'(lambda () (interactive) (ido-find-file-in-dir my/nixos-dir))
       :desc "Find file on server"
       "b" #'(lambda () (interactive) (ido-find-file-in-dir my/server-homedir)))
-#+END_SRC
+#+end_src
 
 ** Spellchecking, dictionaries
-I couldn’t figure out how to make this work until following tecosaur. Thanks, tecosaur.
-#+BEGIN_SRC emacs-lisp
+I couldn't figure out how to make this work until following tecosaur. Thanks, tecosaur.
+#+begin_src emacs-lisp
 (setq ispell-dictionary "en"
       ispell-personal-dictionary (expand-file-name
                                   ".ispell_personal"
                                   doom-private-dir))
-#+END_SRC
+#+end_src
 
 ** Various fun functions, odds and ends
 A fun little thing you can do in Emacs 27. Function due to an internet stranger, whom I should cite if I ever find them again.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (defun screenshot-svg ()
   "Save a screenshot of the current frame as an SVG image.
 Saves to a temp file and puts the filename in the kill ring."
@@ -170,7 +171,7 @@ Saves to a temp file and puts the filename in the kill ring."
       (insert data))
     (kill-new filename)
     (message filename)))
-#+END_SRC
+#+end_src
 
 * Org
 #+begin_src emacs-lisp
@@ -181,7 +182,7 @@ Saves to a temp file and puts the filename in the kill ring."
 * Programming
 ** Rust
 I want to ensure that my compilation buffers show up on the right-hand side. Check the documentation for ~set-popup-rule!~ to find out about all the keys you can use for this.
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (setq my/rustic-popup-position 'right)
 (setq my/rustic-popup-width 0.40)
 
@@ -216,7 +217,7 @@ I want to ensure that my compilation buffers show up on the right-hand side. Che
              (max 0.0
                   (+ ,delta my/rustic-popup-width))))
        (my/set-rustic-popup-rules))))
-#+END_SRC
+#+end_src
 
 Ok, let's set all of those things.
 #+begin_src emacs-lisp
@@ -249,7 +250,7 @@ Some additional cargo-wrapping functions
 #+end_src
 
 Now let's map all of these things to key bindings.
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (defmacro my/toggle (var)
   `(lambda () (interactive)
      (progn
@@ -292,14 +293,14 @@ Now let's map all of these things to key bindings.
       "f" (my/toggle rustic-format-on-save)
       :desc "Toggle cargo-check on save"
       "c" (my/toggle my/rustic-cargo-check-on-save))
-#+END_SRC
+#+end_src
 
 ** Python
 For some reason, Doom's Python module is relatively impoverished compared to the Spacemacs Python layer, in that few of the keybindings are evil-ified. I'm trying to make up the difference here.
 
 First, a little helper macro for do-and-switch-to-window functions, which will be helpful for defining these keybindings:
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (defmacro my/do-and-switch (action buffer-name)
   "Accepts some ACTION and BUFFER-NAME, and produces a lambda that performs the action and switches to the window presenting the corresponding buffer."
   `(lambda ()
@@ -307,11 +308,11 @@ First, a little helper macro for do-and-switch-to-window functions, which will b
     (,action)
     (let ((win (display-buffer ,buffer-name nil 'visible)))
       (select-window win))))
-#+END_SRC
+#+end_src
 
-Now let’s use that macro to set some bindings. I should modify this so that ~i~ starts a repl if there is none, and runs ~python-shell-switch-to-shell~ if there is not. Also, these are producing ~Wrong number of arguments~ errors for some reason.
+Now let's use that macro to set some bindings. I should modify this so that ~i~ starts a repl if there is none, and runs ~python-shell-switch-to-shell~ if there is not. Also, these are producing ~Wrong number of arguments~ errors for some reason.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (map! :after python
       :map python-mode-map
       :localleader
@@ -336,14 +337,14 @@ Now let’s use that macro to set some bindings. I should modify this so that ~i
       "f" #'python-shell-send-file
       :desc "Send file and switch"
       "F" (my/do-and-switch python-shell-send-file "*Python*"))
-#+END_SRC
+#+end_src
 
-I also want the shell to feel less ‘transient.’
+I also want the shell to feel less 'transient.'
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (after! popup
   (set-popup-rule! "^\\*Python"
-    :select nil  ;; don’t auto-focus the window
+    :select nil  ;; don't auto-focus the window
                  ;; instead, use the commands defined above
     ;; :action
     :side 'right ;; on the rhs of the screen
@@ -351,7 +352,7 @@ I also want the shell to feel less ‘transient.’
     :quit nil
   )
   (set-popup-rule! "^\\*pytest*"
-    :select nil  ;; don’t auto-focus the window
+    :select nil  ;; don't auto-focus the window
                  ;; instead, use the commands defined above
     ;; :action
     :side 'right ;; on the rhs of the screen
@@ -359,49 +360,49 @@ I also want the shell to feel less ‘transient.’
     :quit nil
   )
 )
-#+END_SRC
+#+end_src
 
-Finally, I want to get rid of the default ligatures from the ~ligatures~ module. If there’s a cleaner way to accomplish this (say, with a single built-in function, or by setting a ~ligatures~ module variable), I’d like to know.
+Finally, I want to get rid of the default ligatures from the ~ligatures~ module. If there's a cleaner way to accomplish this (say, with a single built-in function, or by setting a ~ligatures~ module variable), I'd like to know.
 
-This /doesn’t quite work/ right now. In particular, the /first/ python buffer will have all the undesired default ligatures, while subsequent ones will only have the one(s) specified here.
+This /doesn't quite work/ right now. In particular, the /first/ python buffer will have all the undesired default ligatures, while subsequent ones will only have the one(s) specified here.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (after! python
   (set-ligatures! 'python-mode nil) ;; remove the defaults
   (set-ligatures! 'python-mode  ;; and insert new ones
     :lambda "lambda"))
-#+END_SRC
+#+end_src
 
 ** TeX
-Let’s first set some defaults:
-#+BEGIN_SRC emacs-lisp
+Let's first set some defaults:
+#+begin_src emacs-lisp
 (after! tex-mode
   (setq +latex-viewers '(pdf-tools)))
-#+END_SRC
+#+end_src
 
-Doom doesn’t supply a lot of evil bindings for TeX by default, so let’s do that, too.
+Doom doesn't supply a lot of evil bindings for TeX by default, so let's do that, too.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (map! :after tex-mode
       :localleader
       "c" #'TeX-command-run-all  ;; compile and view the document
 )
-#+END_SRC
+#+end_src
 
 Finally, pdf popups (which--I think--will mostly come from ~.tex~ documents) should appear on the right-hand side.
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (after! popup
   (set-popup-rule! "^.*.pdf"
-    :select nil    ;; don’t focus the window after it opens
+    :select nil    ;; don't focus the window after it opens
     :side 'right   ;; on the rhs of the screen
     :width 0.5     ;; and fill 50% of it.
-    :quit nil      ;; don’t disappear on me
+    :quit nil      ;; don't disappear on me
   )
 )
-#+END_SRC
+#+end_src
 * Documents
-Some pdf viewing preferences: start in ~midnight-minor-mode~, and use theme colors.  I’m treating it not as a ‘pdf dark mode,’ but as a ‘pdf themed mode,’ which is what you really want most of the time.
-#+BEGIN_SRC emacs-lisp
+Some pdf viewing preferences: start in ~midnight-minor-mode~, and use theme colors.  I'm treating it not as a 'pdf dark mode,' but as a 'pdf themed mode,' which is what you really want most of the time.
+#+begin_src emacs-lisp
 (defun my/set-pdf-view-midnight-colors ()
   "Sets the colors for viewing pdfs in 'dark mode'"
   (interactive)
@@ -418,18 +419,18 @@ Some pdf viewing preferences: start in ~midnight-minor-mode~, and use theme colo
 ;; Start in midnight mode!
 (add-hook! 'pdf-view-mode-hook
             #'pdf-view-midnight-minor-mode)
-#+END_SRC
+#+end_src
 
 * Email
-~mu4e~ doesn’t seem to be loading. Doom Emacs doesn’t find the ~site-lisp~ directory and add it to the load path even after a refresh. Maybe I’m supposed to build Emacs with /with/ the package, but ~mu~ doesn’t seem to be an allowd package in this derivation. Let’s just add it manually, which works just fine.
+~mu4e~ doesn't seem to be loading. Doom Emacs doesn't find the ~site-lisp~ directory and add it to the load path even after a refresh. Maybe I'm supposed to build Emacs with /with/ the package, but ~mu~ doesn't seem to be an allowed package in this derivation. Let's just add it manually, which works just fine.
 
 #+begin_src emacs-lisp
 (add-to-list 'load-path "/run/current-system/sw/share/emacs/site-lisp/mu4e")
 #+end_src
 
-First, we'll import the bits of my email configuration that I want to keep private. Also, set any variables here that you’d like to be after ~mu4e~ loads.
+First, we'll import the bits of my email configuration that I want to keep private. Also, set any variables here that you'd like to be after ~mu4e~ loads.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (after! mu4e
   (load! "secrets/mu4e-config.el")
   (setq
@@ -442,18 +443,18 @@ First, we'll import the bits of my email configuration that I want to keep priva
    message-kill-buffer-on-exit t
    ;; should just quit when I type `q`
    mu4e-confirm-quit nil))
-#+END_SRC
+#+end_src
 
 I want some better defaults for formatting (particularly HTML) emails, and to automatically check emails
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (setq org-msg-options
       "html-postamble:nil toc:nil author:nil email:nil \\n:t -:t ^:{} H:5 num:0")
-#+END_SRC
+#+end_src
 
-And these are just setting up usual text-viewing minor modes. I wonder if I should fold these into ~text-mode~, since they’re redundant with some of the ~org-mode~ minor modes.
+And these are just setting up usual text-viewing minor modes. I wonder if I should fold these into ~text-mode~, since they're redundant with some of the ~org-mode~ minor modes.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 ;; TODO are line breaks still not handled correctly?
 (add-hook 'mu4e-compose-mode-hook
           #'(lambda ()
@@ -462,4 +463,4 @@ And these are just setting up usual text-viewing minor modes. I wonder if I shou
               (use-hard-newlines -1)
               (flyspell-mode))
           t)
-#+END_SRC
+#+end_src
