@@ -1,4 +1,3 @@
-configuration
 #+AUTHOR: mcncm
 #+PROPERTY: header-args :emacs-lisp :tangle yes :comments no :cache yes :results silent
 #+STARTUP: org-startup-folded: showall
@@ -42,7 +41,7 @@ This is just the block at the top of the ~config.el~ that ships with Doom Emacs,
 ;; font string. You generally only need these two:
 ;; (setq doom-font (font-spec :family "monospace" :size 12 :weight 'semi-light)
 ;;       doom-variable-pitch-font (font-spec :family "sans" :size 13))
-(setq my/code-family "Fira Code")
+(setq my/code-family "FiraCode Nerd Font")
 ;; (setq my/code-family "Fantasque Sans")
 (setq my/code-size 20)
 ;; (setq my/text-family "Georgia")
@@ -56,7 +55,7 @@ This is just the block at the top of the ~config.el~ that ships with Doom Emacs,
       doom-big-font (font-spec :family my/code-family :size 30)
       doom-variable-pitch-font (font-spec :family my/text-family :size my/text-size :weight 'thin))
 
-(setq doom-unicode-font (font-spec :family "Symbola" :size my/text-size))
+(setq doom-unicode-font (font-spec :family "DejaVu Sans Mono" :size my/code-size))
 
 ;; There are two ways to load a theme. Both assume the theme is installed and
 ;; available. You can either set `doom-theme' or manually load a theme with the
@@ -117,6 +116,12 @@ Here I’m trying to more closely match the [[https://www.spacemacs.org/][Spacem
 (setq doom-localleader-key ",")
 #+END_SRC
 
+It takes a while for the which-key tips to come up. Make it faster.
+
+#+begin_src emacs-lisp
+(setq which-key-idle-delay 0.25)
+#+end_src
+
 And here are some miscellaneous settings.  All of these are snagged from [[https://tecosaur.github.io/emacs-config/config.html#better-defaults][tecosaur]], who in turn got them from a much larger list of “better defaults” from [[https://github.com/angrybacon/dotemacs/blob/master/dotemacs.org#use-better-defaults][angrybacon]].
 
 #+BEGIN_SRC emacs-lisp
@@ -169,6 +174,13 @@ I’m always turning electric quotes on and off, so it helps to have this bound 
       "t" #'treemacs)
 #+END_SRC
 
+Project-level ~make~ seems like a nice thing to have.
+#+begin_src emacs-lisp
+(map! :leader
+      :desc "Make"
+      "m" #'+make/run)
+#+end_src
+
 ** “Verbal” bindings and tidbits
 :PROPERTIES:
 :ID:       dc5af299-6de5-4a09-b16f-b90875658c59
@@ -185,7 +197,7 @@ There are a few functions I’d really like bound to keyboard shortcuts that are
 #+BEGIN_SRC emacs-lisp
 (map!
  :leader
- :prefix ("v" . "+words")
+ :prefix ("v" . "words")
  (:after spell-fu
   "a" #'spell-fu-word-add
   "r" #'spell-fu-word-remove)
@@ -422,7 +434,7 @@ Some sensible org theme things. I think I snagged these from [[https://github.co
     ;; between my/code-size and my/text-size. That’s probably a hint as to
     ;; what’s going on.
     `(org-latex-and-related :family ,my/code-family :height 0.8)
-    `(org-code :family ,my/code-family :height 0.8)
+    `(org-code :family ,my/code-family :height 1.0)
     `(org-block-begin-line :height 1.0) ;; What do I have to do with this
     `(org-block :family ,my/code-family :height 0.8)
     `(org-drawer :inherit default :family ,my/code-family)
@@ -501,7 +513,7 @@ Not necessary if using ~:editor format-all~ (or something like this? I forget wh
 I want to ensure that my compilation buffers show up on the right-hand side. Check the documentation for ~set-popup-rule!~ to find out about all the keys you can use for this.
 
 #+BEGIN_SRC emacs-lisp
-(setq my/rustic-popup-position 'bottom)
+(setq my/rustic-popup-position 'right)
 (setq my/rustic-popup-width 0.40)
 
 (defun my/set-rustic-popup-rules ()
@@ -542,7 +554,7 @@ I want to ensure that my compilation buffers show up on the right-hand side. Che
 
 It is sometimes advised, I think, to abrogate the use of advice. But I thought it would be much nicer to use this approach here than to define an entirely /new/ function and to bind it to some unused key or to override the binding for  ~rustic-cargo-run~. This is a much simpler version of the function ~cargo-comint-run~  appearing in my Spacemacs config.
 
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no
 (defadvice! cargo-run-comint ()
   "After calling `rustic-cargo-run`, enter comint mode and make the buffer editable."
   :after #'rustic-cargo-run
@@ -567,39 +579,16 @@ I’d also like to be able to enjoy a development style that feels a little like
   (interactive)
   (rustic-run-cargo-command "cargo build --release"))
 
-(defun my/rustic-cargo-check ()
-  "Check, but in the current default directory; not the workspace."
+(defun my/rustic-cargo-run-release ()
+  "Do a release build"
   (interactive)
-  (rustic-run-cargo-command
-   "cargo check"
-   `(:directory ,default-directory)))
+  (rustic-run-cargo-command "cargo run --release"))
 
 (defun my/rustic-cargo-test ()
-  "Run all tests, but in the current default directory; not the workspace"
+  "Run all tests in the current default directory"
   (interactive)
   (rustic-run-cargo-command
-   "cargo test --no-fail-fast"
-   `(:directory ,default-directory)))
-#+end_src
-
-All right. ~rustic-mode~ seems to be having some mild personal problems. This function is defined in ~rustic.el~ with ~Cargo.toml~ rather than ~Cargo.lock~, inconsistent with the comment. Maybe I should report this as a bug.
-
-#+begin_src emacs-lisp
-(after! rustic
-    (defun rustic-buffer-workspace (&optional nodefault)
-    "Return the Rust workspace for the current buffer.
-    This is the directory containing the file \"Cargo.lock\".  When
-    called outside a Rust project, then return `default-directory',
-    or if NODEFAULT is non-nil, then fall back to returning nil."
-    (or rustic--buffer-workspace
-        (let ((dir (locate-dominating-file default-directory "Cargo.lock")))
-            (when dir
-            (setq dir (expand-file-name dir)))
-            (setq rustic--buffer-workspace dir)
-            (or dir
-                (and (not nodefault)
-                    default-directory)))))
-    )
+   "cargo test --no-fail-fast"))
 #+end_src
 
 A helpful little function to add dependencies with ~cargo-add~
@@ -630,18 +619,22 @@ A helpful little function to add dependencies with ~cargo-add~
 (map! :after rustic
       :map rustic-mode-map
       :localleader
+
+      :desc "Expand macro at point"
+      "e" #'lsp-rust-analyzer-expand-macro
+
       :desc "Add dependency"
       "d" (lambda () (interactive) (my/cargo-add))
-      ;; override cargo-build to use the `--workspace` flag
-      ;; :desc "cargo build"
-      ;; "d" 'my/rustic-cargo-build
+
       :prefix "b"
-      :desc "release build"
-      "R" #'my/rustic-cargo-build-release
-      :desc "build and watch"
-      "w" #'my/rustic-cargo-build-watch
-      :desc "cargo check"
-      "c" #'my/rustic-cargo-check
+      (:prefix ("w" . "cargo watch")
+       :desc "cargo watch -x check"
+       "c" #'my/rustic-cargo-watch-check
+       :desc "cargo watch -x run"
+       "r" #'my/rustic-cargo-watch-run)
+       :desc "cargo run --release"
+       "R" #'my/rustic-cargo-run-release
+
       :prefix "t"
       :desc "all"
       "a" #'my/rustic-cargo-test
@@ -663,6 +656,11 @@ A helpful little function to add dependencies with ~cargo-add~
       "c" (my/toggle my/rustic-cargo-check-on-save))
 #+END_SRC
 
+#+begin_src emacs-lisp
+(after! rustic
+  (setq rustic-compile-directory-method #'rustic-buffer-crate))
+#+end_src
+
 ** Python
 :PROPERTIES:
 :ID:       a35914a2-c500-43d4-bf52-97239c27e509
@@ -678,8 +676,7 @@ First, a little helper macro for do-and-switch-to-window functions, which will b
     (interactive)
     (,action)
     (let ((win (display-buffer ,buffer-name nil 'visible)))
-      (select-window win)
-      (evil-insert))))
+      (select-window win))))
 #+END_SRC
 
 Now let’s use that macro to set some bindings. I should modify this so that ~i~ starts a repl if there is none, and runs ~python-shell-switch-to-shell~ if there is not. Also, these are producing ~Wrong number of arguments~ errors for some reason.
@@ -793,8 +790,8 @@ I’d like to use Mathematica within Org-mode. This first pass is taken from [[h
 Cavy is a little programming language I’m working on for fun. We should turn on its major mode while editing Cavy source.
 #+begin_src emacs-lisp
 (load-file "~/proj/cavy/cavy-mode/cavy-mode.el")
-(setq cavy-binary "~/.cargo/bin/cavyc")
-(setq cavy-alt-binary "~/proj/cavy/cavy-lang/target/debug/cavyc")
+(setq cavy-binary "~/proj/cavy/cavy-lang/target/debug/cavyc")
+(setq cavy-alt-binary "~/.cargo/bin/cavyc")
 (add-to-list 'auto-mode-alist '("\\.cavy\\'" . cavy-mode))
 (add-to-list 'auto-mode-alist '("\\.cv\\'" . cavy-mode))
 
@@ -869,11 +866,21 @@ Another utility I'd like to have is the ability to set a watch on a file and dis
 ;; completion. As a matter of fact, this will be useful for all sorts of things.
 ;; Right now I'm just using it for Cavy, but I really should refactor it so it
 ;; can be useful for all sorts of projects
-(defun my/rustic-cargo-build-watch ()
+;; (defun my/rustic-cargo-build-watch ()
+;;   (interactive)
+;;   (rustic-run-cargo-command
+;;    "cargo build"
+;;    '(:sentinel my/rustic-watch-sentinel)))
+
+(defun my/rustic-cargo-watch-run ()
   (interactive)
   (rustic-run-cargo-command
-   "cargo build"
-   '(:sentinel my/rustic-watch-sentinel)))
+   "cargo watch -x run"))
+
+(defun my/rustic-cargo-watch-check ()
+  (interactive)
+  (rustic-run-cargo-command
+   "cargo watch -x check"))
 
 (defun my/rustic-watch-sentinel (process event)
   (progn
@@ -997,10 +1004,13 @@ For some reason, ~undo-tree-mode~ is disabled in Coq buffers. Let’s turn it ba
 I’d like to not use some of the “prettified” symbols in ~company-coq-mode~ for which Fira Code already has better-looking ligatures. It’s mostly the arrows.
 #+begin_src emacs-lisp
 (after! company-coq
-  (let ((rejected-pretty-symbols '("->" "<-" "<->" ">->" "~>" "~~>" "-->" "<--" "=>")))
+  (let ((rejected-pretty-symbols '("->" "<-" "<->" ">->" "~>" "~~>" "-->" "<--" "=>" "::" "|-")))
     (setq company-coq-prettify-symbols-alist
           (-filter (lambda (s) (not (member (car s) rejected-pretty-symbols)))
-                   company-coq-prettify-symbols-alist))))
+                   company-coq-prettify-symbols-alist))
+    (setq coq-prettify-symbols-alist
+          (-filter (lambda (s) (not (member (car s) rejected-pretty-symbols)))
+                   coq-prettify-symbols-alist))))
 #+end_src
 ** Lilypond
 There /is/ a ~lilypond-mode~, but it doesn’t seem to be on MELPA, and it maybe doesn’t work.
@@ -1239,6 +1249,12 @@ And these are some similar bindings for ~org-roam-bibtex~. I probably want this 
       "b" #'ivy-bibtex)
 #+END_SRC
 
+The ~bibtex~ package seems to have changed in order to require the user to set this key explicitly in order to look up a PDF from the bibtex file.
+#+begin_src emacs-lisp
+(after! bibtex
+  (setq bibtex-completion-pdf-field "file"))
+#+end_src
+
 I also want to change ~ivy-bibtex-default-action~, which in the default configuration (~ivy-bibtex-open-any~) simply opens a document. I’d like the option, for example, to open my notes instead. ~ivy-dispatching-call~ provides this. But it doesn't take a ~candidate~ argument like ~ivy-bibtex-open-any~ does, so we need to assign a lambda that ignores this argument.
 
 There’s a slight issue: see the ~ivy-set-actions~ block in  ~ivy-bibtex.el~. A whole lot more functions are bound than are visible when we call this function. Why?
@@ -1251,16 +1267,26 @@ There’s a slight issue: see the ~ivy-set-actions~ block in  ~ivy-bibtex.el~. A
 
 Here are some settings from the not-yet-merged ~biblio~ module, which I have in my private modules directory. I’m not sure if these settings are correct or even necessary. In particular, I don’t think I’m using ~+biblio-pdf-library-dir~ at all.
 
-#+BEGIN_SRC emacs-lisp
-;; Should this be ~after!~ something?
-;; TODO review this section, see which settings you actually need.
-(after! org-ref-bibtex
-  (setq! +biblio-pdf-library-dir (concat org-directory "/biblio/pdfs/")
-         +biblio-default-bibliography-files (directory-files
-                                             (concat org-directory "/biblio/bibs")
-                                             t "\.bib$")
-         +biblio-notes-path (concat org-roam-directory "/refs/")))
-#+END_SRC
+# #+BEGIN_SRC emacs-lisp
+# ;; Should this be ~after!~ something?
+# ;; TODO review this section, see which settings you actually need.
+# (after! org-ref-bibtex
+#   (setq! +biblio-pdf-library-dir (concat org-directory "/biblio/pdfs/")
+#          +biblio-default-bibliography-files (directory-files
+#                                              (concat org-directory "/biblio/bibs")
+#                                              t "\.bib$")
+#          +biblio-notes-path (concat org-roam-directory "/refs/")))
+# #+END_SRC
+
+Huh, weird, are these not doing anything any more? Did it break in an update? Maybe we should be using... This variable?
+
+#+begin_src emacs-lisp
+(after! bibtex-completion
+    (setq! bibtex-completion-bibliography
+           (directory-files
+            (concat org-directory "/biblio/bibs")
+            t "\.bib$")))
+#+end_src
 
 Ok, I don’t know what to do here. This variable is changed, some time during startup, from its default value to ~org-ref-get-pdf-filename-helm-bibtex~, a variable which is only used in one place directly beneath this. I can’t figure out why this is happening. Try using ~debug-watch~ to see if you can get somewhere with it. For now we’ll just hideously, manually reset it.
 #+begin_src emacs-lisp
@@ -1508,7 +1534,7 @@ Doom doesn’t supply a lot of evil bindings for TeX by default, so let’s do t
 )
 #+END_SRC
 
-Finally, pdf popups (which -- I think -- will mostly come from ~.tex~ documents) should appear on the right-hand side.
+Finally, pdf popups (which--I think--will mostly come from ~.tex~ documents) should appear on the right-hand side.
 #+BEGIN_SRC emacs-lisp
 (after! popup
   (set-popup-rule! "^.*.pdf"

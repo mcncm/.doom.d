@@ -50,7 +50,7 @@
        ;;tabs              ; a tab bar for Emacs
        treemacs          ; a project drawer, like neotree but cooler
        ;;unicode           ; extended unicode support for various languages
-       ;;vc-gutter         ; vcs diff in the fringe
+       vc-gutter         ; vcs diff in the fringe
        ;;vi-tilde-fringe   ; fringe tildes to mark beyond EOB
        ;;window-select     ; visually switch windows
        workspaces        ; tab emulation, persistence & separate workspaces
@@ -107,7 +107,7 @@
         +dictionary
         +offline
         +docsets)              ; navigate your code and its documentation
-       lsp
+       (lsp +eglot)
        ;;macos             ; MacOS-specific commands
        magit             ; a git porcelain for Emacs
        make              ; run make tasks from Emacs
@@ -128,7 +128,7 @@
        coq               ; proofs-as-programs
        ;;crystal           ; ruby at the speed of c
        ;;csharp            ; unity, .NET, and mono shenanigans
-       ;;data              ; config/data formats
+       data              ; config/data formats
        ;;(dart +flutter)   ; paint ui and not much else
        ;;elixir            ; erlang done right
        ;;elm               ; care for a cup of TEA?
@@ -137,7 +137,7 @@
        ;;ess               ; emacs speaks statistics
        ;;faust             ; dsp, but you get to keep your soul
        ;;fsharp            ; ML stands for Microsoft's Language
-       fstar             ; (dependent) types and (monadic) effects and Z3
+       ;; fstar             ; (dependent) types and (monadic) effects and Z3
        ;;gdscript          ; the language you waited for
        ;;(go +lsp)         ; the hipster dialect
        (haskell
@@ -161,7 +161,7 @@
        markdown          ; writing docs for people to ignore
        ;;nim               ; python + lisp at the speed of c
        nix               ; I hereby declare "nix geht mehr!"
-       ;;ocaml             ; an objective camel
+       ;; ocaml             ; an objective camel
        (org +roam
             +journal
             +jupyter  ; disabled for now; doesn't build correctly
@@ -188,7 +188,7 @@
        ;;terra             ; Earth and Moon in alignment for performance.
        (web +html +css +lsp)               ; the tubes
        yaml              ; JSON, but readable
-       (zig +lsp)
+       ;; (zig +lsp)
 
        :email
        (mu4e +gmail)

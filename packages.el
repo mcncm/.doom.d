@@ -102,7 +102,7 @@
 
 ;; (package! ob-async :recipe (:no-native-compile t))
 
-(package! lean4-mode :recipe
-  (:host github
-   :repo "leanprover/lean4"
-   :files ("lean4-mode/*.el")))
+;; (package! lean4-mode :recipe
+;;   (:host github
+;;    :repo "leanprover/lean4"
+;;    :files ("lean4-mode/*.el")))
