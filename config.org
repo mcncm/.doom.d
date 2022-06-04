@@ -198,8 +198,7 @@ I want to ensure that my compilation buffers show up on the right-hand side. Che
 Ok, let's set all of those things.
 #+begin_src emacs-lisp
 (after! rustic
-  (my/set-rustic-popup-rules)
-  (setq rustic-format-on-save t))
+  (my/set-rustic-popup-rules))
 #+end_src
 
 A helpful little function to add dependencies with ~cargo-add~
@@ -361,8 +360,14 @@ Doom doesn't supply a lot of evil bindings for TeX by default, so let's do that,
 #+begin_src emacs-lisp
 (map! :after tex-mode
       :localleader
+      :desc "Compile"
       "c" #'TeX-command-run-all  ;; compile and view the document
+
+      (:prefix ("i" . "insert")
+       :desc "Insert environment"
+       "e" #'LaTeX-environment)
 )
+
 #+end_src
 
 Finally, pdf popups (which--I think--will mostly come from ~.tex~ documents) should appear on the right-hand side.
@@ -377,6 +382,10 @@ Finally, pdf popups (which--I think--will mostly come from ~.tex~ documents) sho
 )
 #+end_src
 
+Let's also define some evil keybindings for the functions I'm most likely to use
+#+begin_src emacs-lisp
+;; TODO
+#+end_src
 * Documents
 Some pdf viewing preferences: start in ~midnight-minor-mode~, and use theme colors.  I'm treating it not as a 'pdf dark mode,' but as a 'pdf themed mode,' which is what you really want most of the time. Note that this *only* works for the themes called ~doom-*~, because only these modify the variable ~doom-themes--colors~.
 #+begin_src emacs-lisp
@@ -408,14 +417,18 @@ It would also be nice to have some keybindings for the most commonly-used
 bibliographical operations.
 #+begin_src emacs-lisp
 (map! :leader
-      :prefix ("\"" . "+cite")
-      :desc "insert citation"
-      "c" #'citar-insert-citation
-      :desc "open"
-      "o" #'citar-open
-      :desc "insert reference"
-      "r" #'citar-insert-reference
-)
+      :prefix ("\"" . "cite")
+      ("o" #'citar-open
+       :desc "open"
+       :prefix ("i" . "insert")
+       :desc "insert bibtex"
+       "b" #'citar-insert-bibtex
+       :desc "insert citation"
+       "c" #'citar-insert-citation
+       :desc "insert keys"
+       "k" #'citar-insert-keys
+       :desc "insert reference"
+       "r" #'citar-insert-reference))
 #+end_src
 
 * Email
@@ -431,8 +444,8 @@ First, we'll import the bits of my email configuration that I want to keep priva
 (after! mu4e
   (load! "secrets/mu4e-config.el")
   (setq
-   ;; get new email every 5 minutes
-   mu4e-update-interval 300
+   ;; get new email once per minute
+   mu4e-update-interval 60
    ;; these settings specify how to retrieve mail
    +mu4e-backend 'offlineimap
    mu4e-get-mail-command "offlineimap"
