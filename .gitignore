@@ -1,5 +1,4 @@
 *.el
-banner
 secrets
 *.emacs_lisp
 .ispell_personal
