@@ -21,17 +21,18 @@
 ;; - `doom-serif-font' -- for the `fixed-pitch-serif' face
 
 (setq
- my/code-family "FiraCode Nerd Font"
- my/code-size 20
- my/big-code-size 30
- my/text-family "XETBook"
- my/text-size 25)
+ my/code-family "Menlo"
+ my/code-size 12
+ my/big-code-size 16
+ ;; my/text-family "XETBook"
+ my/text-size 16)
 
 (setq
  doom-font (font-spec :family my/code-family :size my/code-size)
  doom-big-font (font-spec :family my/code-family :size my/big-code-size)
- doom-variable-pitch-font (font-spec :family my/text-family :size my/text-size :weight 'thin)
- doom-unicode-font (font-spec :family "DejaVu Sans Mono" :size my/code-size))
+ ;; doom-variable-pitch-font (font-spec :family my/text-family :size my/text-size :weight 'thin)
+ ;; doom-unicode-font (font-spec :family "DejaVu Sans Mono" :size my/code-size)
+ )
 #+end_src
 
 ** Themes and appearance
@@ -83,7 +84,7 @@ And some miscellaneous "better defaults." Many of these are snagged from [[https
  ;; open pdfs without annoyance
  large-file-warning-threshold 20000000
  ;; some inline raster images look bad with default `'auto`
- image-scaling-factor 1
+ image-scaling-factor 0.5
  ;; don't leave the whole buffer highlighted after a substitute operation.
  evil-ex-search-persistent-highlight nil
  )
