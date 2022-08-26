@@ -388,6 +388,11 @@ Let's also define some evil keybindings for the functions I'm most likely to use
 ;; TODO
 #+end_src
 * Documents
+# I want to install ~pdf-tools~ using ~nix~, not ~brew~, if they are both available.
+#+begin_src emacs-lisp
+(after! pdf-tools
+  (setq pdf-tools-installer-os "nixos"))
+#+end_src
 Some pdf viewing preferences: start in ~midnight-minor-mode~, and use theme colors.  I'm treating it not as a 'pdf dark mode,' but as a 'pdf themed mode,' which is what you really want most of the time. Note that this *only* works for the themes called ~doom-*~, because only these modify the variable ~doom-themes--colors~.
 #+begin_src emacs-lisp
 (defun my/set-pdf-view-midnight-colors ()
