@@ -59,7 +59,7 @@ Set a theme.
 Some personal directories I'll need to keep track of.
 #+begin_src  emacs-lisp
 (setq
-  my/nixos-dir "~/.config/nixos"
+  my/nixos-dir "~/.config/nixpkgs"
   my/org-agenda-dir (concat
                      org-directory
                      "/agenda"))
