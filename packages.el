@@ -48,3 +48,14 @@
 ;(unpin! pinned-package another-pinned-package)
 ;; ...Or *all* packages (NOT RECOMMENDED; will likely break things)
 ;(unpin! t)
+
+(package! lean4-mode :recipe
+  (:host github
+   :repo "leanprover/lean4-mode"))
+
+;; Don't build these packages: they should already be provided!
+(package! vterm :built-in 'prefer)
+(package! pdf-tools :built-in 'prefer)
+(package! zmq :built-in 'prefer)
+(package! tree-sitter :built-in 'prefer)
+(package! tree-sitter-langs :built-in 'prefer)
