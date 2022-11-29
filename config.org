@@ -154,7 +154,7 @@ Saves to a temp file and puts the filename in the kill ring."
 #+begin_src emacs-lisp
 ;; If you use `org' and don't want your org files in the default location below,
 ;; change `org-directory'. It must be set before org loads!
-(setq org-directory "~/org/")
+(setq org-directory "~/Documents/Org")
 #+end_src
 * Programming
 ** Rust
