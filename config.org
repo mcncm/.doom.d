@@ -358,7 +358,7 @@ Let's first set some defaults:
 
 Doom doesn't supply a lot of evil bindings for TeX by default, so let's do that, too.
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
 (map! :after tex-mode
       :localleader
       :desc "Compile"
@@ -368,7 +368,6 @@ Doom doesn't supply a lot of evil bindings for TeX by default, so let's do that,
        :desc "Insert environment"
        "e" #'LaTeX-environment)
 )
-
 #+end_src
 
 Finally, pdf popups (which--I think--will mostly come from ~.tex~ documents) should appear on the right-hand side.
