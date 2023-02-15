@@ -151,10 +151,16 @@ Saves to a temp file and puts the filename in the kill ring."
 #+end_src
 
 * Org
+Set our home org directory!
 #+begin_src emacs-lisp
 ;; If you use `org' and don't want your org files in the default location below,
 ;; change `org-directory'. It must be set before org loads!
 (setq org-directory "~/Documents/Org")
+#+end_src
+
+For Org-Roam to work with Emacs' new builtin sqlite support, it seems we have to inform Org-Roam explicitly:
+#+begin_src emacs-lisp
+(setq org-roam-database-connector 'sqlite-builtin)
 #+end_src
 * Programming
 ** Rust

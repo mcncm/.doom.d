@@ -60,3 +60,5 @@
 (package! zmq :built-in 'prefer)
 (package! tree-sitter :built-in 'prefer)
 (package! tree-sitter-langs :built-in 'prefer)
+;; Seems to be necessary to use builtin sqlite?
+(package! emacsql-sqlite-builtin :built-in 'prefer)
