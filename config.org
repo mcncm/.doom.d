@@ -376,6 +376,8 @@ Doom doesn't supply a lot of evil bindings for TeX by default, so let's do that,
 )
 #+end_src
 
+You can change the behavior of the compile command by setting ~TeX-command-extra-options~.
+
 Finally, pdf popups (which--I think--will mostly come from ~.tex~ documents) should appear on the right-hand side.
 #+begin_src emacs-lisp
 (after! popup
