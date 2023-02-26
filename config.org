@@ -394,6 +394,63 @@ Let's also define some evil keybindings for the functions I'm most likely to use
 #+begin_src emacs-lisp
 ;; TODO
 #+end_src
+*** Largo
+=largo= is my own personal TeX build tool. Here's a little setup to make it play nice with tex-mode.
+
+Here are some utility functions...
+#+begin_src emacs-lisp :
+
+(setq largo/default-profile "debug")
+
+(setq largo/project-file "largo.toml")
+
+(setq largo/output-file "main.pdf")
+
+(defun largo/get-config-from-root (root-dir)
+  "Given a root directory `root-dir', return the path to the largo project file therein."
+  (file-name-concat root-dir largo/project-file))
+
+;; (defun largo/is-project (dir)
+;;   "Returns `true' iff `dir' is a largo project"
+;;   (file-exists-p (largo/config-from-root dir)))
+
+(defun largo/get-enclosing-project-root (&optional path)
+  "Return the root of an enclosing largo project, or `nil' if there is no enclosing project."
+  (let*
+      ((path (or path default-directory))
+       (largo-file (locate-dominating-file path largo/project-file)))
+    (file-name-directory largo-file)))
+
+(defun largo/get-build-directory-from-root (root)
+  (file-name-concat root "build" largo/default-profile))
+
+(defun largo/get-output-file-from-root (root)
+  (file-name-concat (largo/get-build-directory-from-root root) largo/output-file))
+
+(defun largo/build ()
+  (interactive)
+  (let*
+      ((root-dir (largo/get-enclosing-project-root))
+       (output-file (largo/get-output-file-from-root root-dir)))
+    (shell-command "largo build")))
+#+end_src
+
+...And we'll define a minor mode.
+#+begin_src emacs-lisp
+(define-minor-mode largo-mode
+  "A minor mode for using tex-mode with largo.")
+#+end_src
+
+Finally, we'll run a hook to start the mode in TeX mode, and override the keymap to build with largo.
+#+begin_src emacs-lisp
+(defun my/largo-if-in-project ()
+  (if (largo/get-enclosing-project-root)
+      (largo-mode)
+    ()))
+
+(add-hook! 'TeX-mode-hook #'my/largo-if-in-project)
+#+end_src
+
 * Documents
 # I want to install ~pdf-tools~ using ~nix~, not ~brew~, if they are both available.
 #+begin_src emacs-lisp
