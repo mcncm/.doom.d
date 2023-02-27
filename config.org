@@ -400,11 +400,22 @@ Let's also define some evil keybindings for the functions I'm most likely to use
 Here are some utility functions...
 #+begin_src emacs-lisp :
 
-(setq largo/default-profile "debug")
+(setq largo/default-profile "dev")
 
 (setq largo/project-file "largo.toml")
 
-(setq largo/output-file "main.pdf")
+(setq largo/output-file "_start.pdf")
+
+(setq largo/output-buffer "*Largo Output*")
+
+(setq largo/error-buffer "*Largo Error*")
+
+(setq largo/display-buffer "*Largo Display*")
+
+(add-to-list 'display-buffer-alist `(,largo/output-buffer display-buffer-no-window (nil)))
+(add-to-list 'display-buffer-alist `(,largo/error-buffer display-buffer-no-window (nil)))
+(add-to-list 'display-buffer-alist `(,largo/display-buffer (+popup-buffer)))
+
 
 (defun largo/get-config-from-root (root-dir)
   "Given a root directory `root-dir', return the path to the largo project file therein."
@@ -422,7 +433,7 @@ Here are some utility functions...
     (file-name-directory largo-file)))
 
 (defun largo/get-build-directory-from-root (root)
-  (file-name-concat root "build" largo/default-profile))
+  (file-name-concat root "target" largo/default-profile "build"))
 
 (defun largo/get-output-file-from-root (root)
   (file-name-concat (largo/get-build-directory-from-root root) largo/output-file))
@@ -433,6 +444,44 @@ Here are some utility functions...
       ((root-dir (largo/get-enclosing-project-root))
        (output-file (largo/get-output-file-from-root root-dir)))
     (shell-command "largo build")))
+
+(defun largo/get-output-buffer ()
+  (get-buffer-create largo/output-buffer))
+
+(defun largo/get-error-buffer ()
+  (get-buffer-create largo/error-buffer))
+
+(defun largo/get-display-buffer ()
+  (get-buffer-create largo/display-buffer))
+
+(defun largo/async-shell-command (command)
+  (async-shell-command command (largo/get-output-buffer) (largo/get-error-buffer)))
+
+(defun largo/run-command (args &optional callback)
+  (let
+      ((callback (or callback (lambda () ()))))
+    (set-process-sentinel
+     (apply #'start-process
+            "largo-process"
+            (largo/get-output-buffer)
+            "largo"
+            args)
+     `(lambda (p e)
+        (when (= 0 (process-exit-status p))
+          (funcall ,callback))))))
+
+(defun largo/clean ()
+  (interactive)
+  (largo/run-command '("clean")))
+
+(defun largo/run-build-command ()
+  (interactive)
+  (let*
+      ((root-dir (largo/get-enclosing-project-root))
+       (output-file (largo/get-output-file-from-root root-dir))
+       (callback
+        `(lambda () (find-file-noselect ,output-file))))
+    (largo/run-command '("build") callback)))
 #+end_src
 
 ...And we'll define a minor mode.
@@ -444,11 +493,25 @@ Here are some utility functions...
 Finally, we'll run a hook to start the mode in TeX mode, and override the keymap to build with largo.
 #+begin_src emacs-lisp
 (defun my/largo-if-in-project ()
-  (if (largo/get-enclosing-project-root)
-      (largo-mode)
-    ()))
+  (let ((root (largo/get-enclosing-project-root)))
+    (if root
+        (progn
+          (largo-mode)
+          (setq TeX-output-dir (largo/get-build-directory-from-root root))
+          ())
+      ())))
 
 (add-hook! 'TeX-mode-hook #'my/largo-if-in-project)
+
+(map! :after tex-mode
+      ;; :mode latex-mode
+      :localleader
+      (:prefix ("b" . "build")
+       :desc "build"
+       "b" #'largo/run-build-command
+       :desc "clean"
+       "C" #'largo/clean)
+)
 #+end_src
 
 * Documents
