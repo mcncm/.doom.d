@@ -59,7 +59,7 @@ Set a theme.
 Some personal directories I'll need to keep track of.
 #+begin_src  emacs-lisp
 (setq
-  my/nixos-dir "~/.config/nixpkgs"
+  my/nixos-dir "~/.config/home-manager"
   my/org-agenda-dir (concat
                      org-directory
                      "/agenda"))
@@ -356,6 +356,12 @@ This /doesn't quite work/ right now. In particular, the /first/ python buffer wi
 #+end_src
 
 ** TeX
+Broken auctex package workaround
+#+begin_src emacs-lisp
+(after! auctex ; See <https://github.com/minad/vertico/discussions/475>
+    (fmakunbound 'ConTeXt-mode))
+#+end_src
+
 Let's first set some defaults:
 #+begin_src emacs-lisp
 (after! tex-mode
