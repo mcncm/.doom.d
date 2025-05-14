@@ -355,6 +355,48 @@ This /doesn't quite work/ right now. In particular, the /first/ python buffer wi
     :lambda "lambda"))
 #+end_src
 
+** Typst
+Set the indents
+#+begin_src emacs-lisp
+(after! typst-ts-mode
+    (setq typst-ts-mode-indent-offset 2))
+#+end_src
+
+#+begin_src emacs-lisp
+(defun typst-find-project-root ()
+  "Find the nearest directory containing typst.toml, starting from the current buffer's directory.
+Return nil if no such directory is found."
+  (let ((dir (buffer-file-name)))
+    (when dir
+      (setq dir (file-name-directory dir))
+      (catch 'found
+        (while dir
+          (when (file-exists-p (expand-file-name "typst.toml" dir))
+            (throw 'found dir))
+          ;; Go up one directory level or exit if we're at root
+          (let ((parent (file-name-directory (directory-file-name dir))))
+            (if (string= parent dir)
+                (setq dir nil)  ; We've reached the root directory
+              (setq dir parent))))))))
+
+(defun typst-set-watch-options ()
+  "Set `typst-ts-watch-options` to the directory containing typst.toml."
+  (when (eq major-mode 'typst-ts-mode)
+    (let ((project-root (typst-find-project-root)))
+      (when project-root
+        (setq-local typst-ts-watch-options (format "--root %s" project-root))
+        (message "Set typst-ts-watch-options to %s" project-root)))))
+
+;; Add to typst-ts-mode-hook to run automatically when opening typst files
+(add-hook 'typst-ts-mode-hook #'typst-set-watch-options)
+
+;; Optionally, provide a command to manually run this function
+(defun typst-update-watch-options ()
+  "Manually update the typst-ts-watch-options to the project root."
+  (interactive)
+  (typst-set-watch-options))
+#+end_src
+
 ** TeX
 Broken auctex package workaround
 #+begin_src emacs-lisp
@@ -569,6 +611,13 @@ bibliographical operations.
        :desc "insert reference"
        "r" #'citar-insert-reference))
 #+end_src
+
+Add typst support, piggybacking on markdown
+#+begin_src emacs-lisp
+(after! citar
+   ; TODO
+)
+#+end_src emacs-lisp
 
 * Email
 ~mu4e~ doesn't seem to be loading. Doom Emacs doesn't find the ~site-lisp~ directory and add it to the load path even after a refresh. Maybe I'm supposed to build Emacs with /with/ the package, but ~mu~ doesn't seem to be an allowed package in this derivation. Let's just add it manually, which works just fine.
